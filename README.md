@@ -14,3 +14,29 @@ developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.re
 
 See the [ROCK](https://rock.science) website for more information on the
 ROCK standard for qualitative data analysis.
+
+### Getting Started
+
+To install the latest development version, use the following command in
+R:
+
+``` r
+remotes::install_github("dreamRs/shinytreeview")
+remotes::install_github('jbryer/iROCK')
+```
+
+Start the Shiny application:
+
+``` r
+iROCK::iROCK_shiny()
+```
+
+### Development
+
+This R package is developed using `devtools`.
+
+``` r
+devtools::document()
+devtools::install()
+devtools::check(cran = TRUE)
+```
