@@ -1,0 +1,32 @@
+Type: Package
+Package: iROCK
+Title: Shiny Application for the Reproducible Open Coding Kit
+Version: 0.1.0
+Date: 2025-11-25
+Authors@R:
+    person("Jason", "Bryer", , "jason@bryer.org", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-2454-0402"))
+Maintainer: Jason Bryer <jason@bryer.org>
+Description: Shiny application to conduct qualitative data analysis with the ROCK standard.
+License: GPL (>= 3)
+URL: https://jbryer.github.io/iROCK/
+BugReports: https://github.com/jbryer/iROCK/issues
+Depends:
+    R (>= 3.5)
+Imports:
+    dplyr,
+    shiny,
+    reshape2,
+    rock,
+    bslib,
+    shinytreeview,
+    colourpicker
+Suggests:
+    knitr,
+    rmarkdown
+VignetteBuilder:
+    knitr
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
