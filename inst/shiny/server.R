@@ -47,7 +47,7 @@ function(input, output, session) {
 
 	observeEvent(input$save, {
 		files <- input$upload_files
-print(files)
+# print(files)
 		for(i in seq_len(nrow(files))) {
 			out_file <- paste0(project_dir, '/', tools::file_path_sans_ext(files[i,]$name), '.rock')
 			rock::clean_source(
@@ -130,8 +130,8 @@ print(files)
 	# Update rock file when the user clicks on code tree
 	observeEvent(input$utterance_codes, {
 	# observe({
-print(selected_utterance$uid)
-print(selected_utterance$rendered)
+# print(selected_utterance$uid)
+# print(selected_utterance$rendered)
 		# print(input$edit_utterance)
 		if(is.null(input$edit_utterance) | !selected_utterance$rendered | is.null(selected_utterance$uid)) {
 			return()
@@ -197,9 +197,9 @@ print(paste0('Updating tree: ', paste0(selected_codes, collapse = ', ')))
 			} else {
 				utterance_codes <- paste0('[[', utterance_codes, ']]', collapse = ' ')
 			}
-			ui[[length(ui) + 1]] <- fluidRow(
-				column(3, shiny::div(paste0('[[', df[i,]$uids, ']]')), style = fixed_style),
-				column(9, HTML(
+			ui[[length(ui) + 1]] <- tags$tr(
+				tags$td(paste0('[[', df[i,]$uids, ']]')),
+				tags$td(HTML(
 					paste0("<div id='div", df[i,]$uids, "'",
 						   "onclick='Shiny.onInputChange(\"edit_utterance\", \"",
 						   df[i,]$uids, ";", as.integer(Sys.time()), "\")' ",
@@ -211,7 +211,7 @@ print(paste0('Updating tree: ', paste0(selected_codes, collapse = ', ')))
 				))
 			)
 		}
-		do.call(tagList, ui)
+		do.call(tags$table, ui)
 	})
 
 	observeEvent(input$edit_utterance, {
