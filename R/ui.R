@@ -39,7 +39,13 @@ iROCK_ui <- function() {
 	            		buttonLabel = 'Browse...',
 	            		placeholder = 'No file selected'
 	            	),
-	            	shiny::uiOutput('file_list'),
+	            	# shiny::uiOutput('file_list'),
+	            	shinyTree::shinyTree(
+	            		outputId = 'rock_file',
+	            		search = FALSE,
+	            		checkbox = FALSE,
+	            		multiple = FALSE
+	            	),
 	            	shiny::hr(),
 	            	shiny::uiOutput('delete_selected_file'),
 	            	shiny::actionButton(

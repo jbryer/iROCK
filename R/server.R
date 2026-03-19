@@ -104,7 +104,8 @@ iROCK_server <- function(input, output, session) {
 		session = session,
 		checkFunc = function() {
 			if(!is.null(input$rock_file)) {
-				rock_file <- paste0(project_dir(), '/', input$rock_file)
+				rock_file <- shinyTree::get_selected(input$rock_file, format = "classid")[[1]]
+				rock_file <- paste0(project_dir(), '/', rock_file)
 				if(file.exists(rock_file)) {
 					file.info(rock_file)$mtime[1]
 				} else {
@@ -116,10 +117,13 @@ iROCK_server <- function(input, output, session) {
 		},
 		valueFunc = function() {
 			rock <- NULL
-			rock_file <- paste0(project_dir(), '/', input$rock_file)
-			if(file.exists(rock_file)) {
-				if(!file.info(rock_file)$isdir) {
-					rock <- rock::parse_source(rock_file)
+			if(!is.null(input$rock_file)) {
+				rock_file <- shinyTree::get_selected(input$rock_file, format = "classid")[[1]]
+				rock_file <- paste0(project_dir(), '/', rock_file)
+				if(file.exists(rock_file)) {
+					if(!file.info(rock_file)$isdir) {
+						rock <- rock::parse_source(rock_file)
+					}
 				}
 			}
 			return(rock)
@@ -389,9 +393,13 @@ print('Updating attributes...')
 	# uid null.
 	selected_rock_file <- reactiveVal('')
 	shiny::observeEvent(input$rock_file, {
-		if(input$rock_file != selected_rock_file()) {
-			bslib::toggle_sidebar('coding_sidebar', open = FALSE)
-			selected_utterance$uid <- NULL
+		rock_file <- shinyTree::get_selected(input$roc)
+		if(length(rock_file) > 0) {
+			rock_file <- rock_file[[1]]
+			if(rock_file != selected_rock_file()) {
+				bslib::toggle_sidebar('coding_sidebar', open = FALSE)
+				selected_utterance$uid <- NULL
+			}
 		}
 	})
 
@@ -516,32 +524,42 @@ print('Updating attributes...')
 	##### File listing #############################################################################
 	rock_files <- shiny::reactiveVal()
 	shiny::observeEvent(input$project, {
-		rock_files(list.files(project_dir(), pattern = '.rock'))
+		rock_files(list.files(project_dir(), pattern = '.rock', recursive = TRUE))
 	})
 
-	output$file_list <- shiny::renderUI({
+	# output$file_list <- shiny::renderUI({
+	# 	files <- rock_files()
+	# 	nodes <- list()
+	# 	for(i in files) {
+	# 		nodes[[length(nodes) + 1]] <- list(text = i)
+	# 	}
+	# 	choices <- list(
+	# 		text = 'Data',
+	# 		nodes = nodes
+	# 	)
+	# 	# TODO: use shinyTree instead as it appears shinytreeview will not be published to CRAN
+	# 	shinytreeview::treeviewInput(
+	# 		inputId = "rock_file",
+	# 		label = "Choose a document:",
+	# 		choices =  nodes,
+	# 		width = "100%",
+	# 		multiple = FALSE
+	# 	)
+	# })
+
+	output$rock_file <- shinyTree::renderTree({
 		files <- rock_files()
 		nodes <- list()
 		for(i in files) {
-			nodes[[length(nodes) + 1]] <- list(text = i)
+			nodes[[i]] <- i
 		}
-		choices <- list(
-			text = 'Data',
-			nodes = nodes
-		)
-		# TODO: use shinyTree instead as it appears shinytreeview will not be published to CRAN
-		shinytreeview::treeviewInput(
-			inputId = "rock_file",
-			label = "Choose a document:",
-			choices =  nodes,
-			width = "100%",
-			multiple = FALSE
-		)
+		return(nodes)
 	})
 
 	output$delete_selected_file <- shiny::renderUI({
 		req(input$rock_file)
-		rock_file <- input$rock_file
+		rock_file <- shinyTree::get_selected(input$rock_file, format = "classid")[[1]]
+		# rock_file <- input$rock_file
 		if(!is.null(rock_file)) {
 			shiny::actionButton(
 				inputId = 'delete_file',
@@ -561,7 +579,8 @@ print('Updating attributes...')
 			cancelButtonText = 'Cancel',
 			callbackR = function(x) {
 				if(x) {
-					unlink(paste0(project_dir(), '/', input$rock_file))
+					rock_file <- shinyTree::get_selected(input$rock_file, format = "classid")[[1]]
+					unlink(paste0(project_dir(), '/', rock_file))
 					rock_files(list.files(project_dir(), pattern = '.rock'))
 				}
 			}
@@ -620,7 +639,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		req(input$codebook_tree)
 
 		ui <- list()
-		id <- get_selected(input$codebook_tree, format = "classid")[[1]]
+		id <- shinyTree::get_selected(input$codebook_tree, format = "classid")[[1]]
 		ui[[1]] <- p(paste0('Code ID: ', id))
 
 		yml <- yaml::read_yaml(paste0(project_dir(), '/ROCK_codebook.yml'))

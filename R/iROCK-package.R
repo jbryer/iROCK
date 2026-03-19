@@ -7,19 +7,18 @@
 #' @import shiny rock yaml
 #' @importFrom colourpicker colourInput
 #' @importFrom shinyalert shinyalert
-#' @importFrom shinytreeview treeviewInput
 #' @importFrom shinyTree shinyTree
 #' @importFrom dplyr filter select
 #' @importFrom bslib page_navbar nav_panel layout_sidebar sidebar nav_spacer nav_item navbar_options
 #' @importFrom shinyjs useShinyjs runjs
 #' @importFrom shinyAce aceEditor
-#' @importFrom shinyTree shinyTree get_selected
+#' @importFrom shinyTree shinyTree get_selected renderTree
 #' @importFrom DT DTOutput renderDT datatable
 #' @rdname iROCK
 iROCK <- function(
-		project_dir = getwd(),
-		options = iROCK_options(),
-		...
+	project_dir = getwd(),
+	options = iROCK_options(),
+	...
 ) {
 	ui <- iROCK_ui
 	server <- iROCK_server
@@ -38,5 +37,5 @@ iROCK <- function(
 		server = server,
 		...
 	)
-	runApp(app)
+	runApp(app, ...)
 }
