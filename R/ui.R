@@ -156,6 +156,7 @@ iROCK_ui <- function() {
 
 
 	    ),
+		shiny::uiOutput('about_tab'),
 		bslib::nav_spacer(),
 		bslib::nav_item(link_rock)
 	)

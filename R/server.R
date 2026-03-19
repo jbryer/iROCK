@@ -130,7 +130,7 @@ iROCK_server <- function(input, output, session) {
 		}
 	)
 
-	##### File upload ##############################################################################
+	##### File upload ##########################################################
 	observeEvent(input$upload_files, {
 		files <- input$upload_files
 		shiny::showModal(
@@ -258,7 +258,7 @@ iROCK_server <- function(input, output, session) {
 		removeModal()
 	})
 
-	##### Code Editing #############################################################################
+	##### Code Editing #########################################################
 	output$code_input <- shiny::renderUI({
 		shiny::selectizeInput(
 			inputId = 'new_code',
@@ -504,7 +504,7 @@ print('Updating attributes...')
 		selected_utterance$rendered <- TRUE
 	})
 
-	##### Modal editing ############################################################################
+	##### Modal editing ########################################################
 	shiny::observeEvent(input$save_utterance, {
 # print(paste0('Saving ', selected_utterance$uid))
 		selected_utterance$uid <- NULL
@@ -521,7 +521,7 @@ print('Updating attributes...')
 		}
 	})
 
-	##### File listing #############################################################################
+	##### File listing #########################################################
 	rock_files <- shiny::reactiveVal()
 	shiny::observeEvent(input$project, {
 		rock_files(list.files(project_dir(), pattern = '.rock', recursive = TRUE))
@@ -605,7 +605,7 @@ print('Updating attributes...')
 		)
 	})
 
-	##### Attributes Tables ########################################################################
+	##### Attributes Tables ####################################################
 	output$attributes_table <- DT::renderDT({
 		rock_files <- rock::parse_sources(path = project_dir(), filesWithYAML = yaml_files)
 		DT::datatable(rock_files$attributesDf, editable = TRUE)
@@ -619,7 +619,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		# rv$data[row, col] <- input$attributes_table_cell_edit$value
 	})
 
-	##### Codebook #################################################################################
+	##### Codebook #############################################################
 	output$codebook_tree <- shinyTree::renderTree({
 		yml <- get_codebook_file()
 		# TODO: need to add lots of checking.
@@ -801,7 +801,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		do.call(div, ui)
 	})
 
-	##### Analyses #################################################################################
+	##### Analyses #############################################################
 	output$file_selection <- shiny::renderUI({
 		rock_files <- list.files(project_dir(), pattern = '*.rock')
 		shiny::checkboxGroupInput(
@@ -851,7 +851,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 	})
 
 
-	##### Project export/import ####################################################################
+	##### Project export/import ################################################
 	output$download_project <- shiny::downloadHandler(
 		filename = function() {
 			paste0(input$project, '.ROCKproject')
@@ -864,4 +864,20 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 			)
 		}
 	)
+
+	##### About tab/instructions ###############################################
+	output$about_tab <- renderUI({
+		ui <- NULL
+		about_file <- file.path(find.package('iROCK'), 'about.md')
+		if(!file.exists(about_file)) {
+			about_file <- file.path(find.package('iROCK'), 'inst', 'about.md')
+		}
+		if(file.exists(about_file)) {
+			ui <- bslib::nav_panel(
+				title = 'About',
+				shiny::includeMarkdown(about_file)
+			)
+		}
+		return(ui)
+	})
 }
