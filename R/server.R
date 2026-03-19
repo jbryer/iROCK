@@ -1,16 +1,23 @@
-function(input, output, session) {
-	selected_utterance <- reactiveValues(
+#' iROCK Shiny Server
+#'
+#' @param input Shiny input object.
+#' @param output Shiny output object.
+#' @param session Shiny session object.
+#' @export
+#' @rdname iROCK
+iROCK_server <- function(input, output, session) {
+	selected_utterance <- shiny::reactiveValues(
 		uid = NULL,
 		rendered = FALSE
 	)
 
-	output$selected_uid <- renderText({
+	output$selected_uid <- shiny::renderText({
 		selected_utterance$uid
 	})
 
-	output$project_selection <- renderUI({
+	output$project_selection <- shiny::renderUI({
 		projects <- list.dirs(path = projects_location, recursive = FALSE, full.names = FALSE)
-		selectInput(
+		shiny::selectInput(
 			inputId = 'project',
 			label = 'Project',
 			choices = projects
@@ -18,47 +25,47 @@ function(input, output, session) {
 	})
 
 	# TODO: use file.path instead of paste0 to use system path separator
-	project_dir <- reactive({
+	project_dir <- shiny::reactive({
 		path <- paste0(projects_location, '/', input$project, '/')
 		return(path)
 	})
 
-	observeEvent(input$new_project, {
-		showModal(
-			modalDialog(
+	shiny::observeEvent(input$new_project, {
+		shiny::showModal(
+			shiny::modalDialog(
 				title = 'New Project',
-				textInput(
+				shiny::textInput(
 					inputId = 'new_project_dir',
 					label = 'Project Name',
 					width = '100%'
 				),
-				footer = tagList(
-					modalButton('Cancel'),
-					actionButton(inputId = 'create_new_project', label = 'Create')
+				footer = shiny::tagList(
+					shiny::modalButton('Cancel'),
+					shiny::actionButton(inputId = 'create_new_project', label = 'Create')
 				)
 			)
 		)
 	})
 
-	observeEvent(input$delete_project, {
-
+	shiny::observeEvent(input$delete_project, {
+		# TODO: implement
 	})
 
-	observeEvent(input$create_new_project, {
+	shiny::observeEvent(input$create_new_project, {
 		# TODO: Should make sure the name is good
 		new_dir <- paste0(projects_location, '/', input$new_project_dir)
 		dir.create(path = new_dir)
 		new_rock_codebook(yaml_file = paste0(new_dir, '/ROCK_codebook.yml'))
-		updateSelectInput(
+		shiny::updateSelectInput(
 			session = session,
 			inputId = 'project',
 			choices = list.dirs(path = projects_location, recursive = FALSE, full.names = FALSE),
 			selected = input$new_project_dir
 		)
-		removeModal()
+		shiny::removeModal()
 	})
 
-	codebook_codes <- reactive({
+	codebook_codes <- shiny::reactive({
 		codebook <- get_codebook_file()
 		codes <- c()
 		if(!is.null(codebook)) {
@@ -70,7 +77,7 @@ function(input, output, session) {
 		return(codes)
 	})
 
-	get_codebook_file <- reactivePoll(
+	get_codebook_file <- shiny::reactivePoll(
 		intervalMillis = 500,
 		session = session,
 		checkFunc = function() {
@@ -92,7 +99,7 @@ function(input, output, session) {
 	)
 
 	# Using a reactivePoll in case the file is changed outside the Shiny app
-	get_rock_file <- reactivePoll(
+	get_rock_file <- shiny::reactivePoll(
 		intervalMillis = 500,
 		session = session,
 		checkFunc = function() {
@@ -122,21 +129,21 @@ function(input, output, session) {
 	##### File upload ##############################################################################
 	observeEvent(input$upload_files, {
 		files <- input$upload_files
-		showModal(
-			ui = modalDialog(
-				uiOutput('file_upload_modal'),
+		shiny::showModal(
+			ui = shiny::modalDialog(
+				shiny::uiOutput('file_upload_modal'),
 				size = 'l',
 				easyClose = FALSE,
 				title = 'Upload file(s)',
-				footer = tagList(
-					modalButton('Cancel'),
-					actionButton(inputId = 'save', label = 'Save')
+				footer = shiny::tagList(
+					shiny::modalButton('Cancel'),
+					shiny::actionButton(inputId = 'save', label = 'Save')
 				)
 			)
 		)
 	})
 
-	output$file_upload_modal <- renderUI({
+	output$file_upload_modal <- shiny::renderUI({
 		ui <- list()
 		files <- input$upload_files
 
@@ -146,11 +153,11 @@ function(input, output, session) {
 
 		if(files[1,]$type == 'text/plain') {
 			# TODO: This parameters are currently not used yet
-			ui[[length(ui) + 1]] <- checkboxInput(
+			ui[[length(ui) + 1]] <- shiny::checkboxInput(
 				inputId = 'removeNewlines',
 				label = 'Remove all newline characters from the source before starting to clean them',
 				value = FALSE)
-			ui[[length(ui) + 1]] <- checkboxInput(
+			ui[[length(ui) + 1]] <- shiny::checkboxInput(
 				inputId = 'removeTrailingNewlines',
 				label = 'Remove trailing newline characters',
 				value = TRUE
@@ -178,7 +185,7 @@ function(input, output, session) {
 				id_col <- c(id = 'id')
 			}
 
-			ui[[length(ui) + 1]] <- selectInput(
+			ui[[length(ui) + 1]] <- shiny::selectInput(
 				inputId = 'id_column',
 				label = 'ID Column',
 				multiple = FALSE,
@@ -186,7 +193,7 @@ function(input, output, session) {
 				selected = names(id_col)[1],
 				width = '100%'
 			)
-			ui[[length(ui) + 1]] <- selectInput(
+			ui[[length(ui) + 1]] <- shiny::selectInput(
 				inputId = 'text_column',
 				label = 'Text Column',
 				multiple = FALSE,
@@ -194,7 +201,7 @@ function(input, output, session) {
 				selected = text_col_selected,
 				width = '100%'
 			)
-			ui[[length(ui) + 1]] <- selectInput(
+			ui[[length(ui) + 1]] <- shiny::selectInput(
 				inputId = 'attribute_column',
 				label = 'Attribute Column(s)',
 				multiple = TRUE,
@@ -205,9 +212,10 @@ function(input, output, session) {
 		do.call(tagList, ui)
 	})
 
-	observeEvent(input$save, {
+	shiny::observeEvent(input$save, {
 		files <- input$upload_files
 		if(files[1,]$type == 'text/plain') {
+			# TODO: if the user uploads a .rock file should probably not processes it.
 			for(i in seq_len(nrow(files))) {
 				out_file <- paste0(project_dir(), '/', tools::file_path_sans_ext(files[i,]$name), '.rock')
 				rock::clean_source(
@@ -247,8 +255,8 @@ function(input, output, session) {
 	})
 
 	##### Code Editing #############################################################################
-	output$code_input <- renderUI({
-		selectizeInput(
+	output$code_input <- shiny::renderUI({
+		shiny::selectizeInput(
 			inputId = 'new_code',
 			label = 'Enter new code',
 			choices = c('', codebook_codes()),
@@ -259,7 +267,7 @@ function(input, output, session) {
 		)
 	})
 
-	observeEvent(input$new_code, {
+	shiny::observeEvent(input$new_code, {
 		if(input$new_code != '') {
 			code_pattern <- "^[A-Za-z][A-Za-z0-9_]+$"
 			if(!grepl(code_pattern, input$new_code)) {
@@ -285,7 +293,7 @@ function(input, output, session) {
 				}
 			}
 
-			updateSelectizeInput(
+			shiny::updateSelectizeInput(
 				session = session,
 				inputId = 'new_code',
 				choices = codebook_codes(),
@@ -294,7 +302,7 @@ function(input, output, session) {
 	})
 
 	# Render list of existing codes for utterance
-	output$selected_codes <- renderUI({
+	output$selected_codes <- shiny::renderUI({
 		rock <- get_rock_file()
 		ui <- list()
 		uid <- selected_utterance$uid
@@ -306,7 +314,7 @@ function(input, output, session) {
 			for(code in codes) {
 				ui[[length(ui) + 1]] <- div(
 					code, ' ',
-					actionLink(
+					shiny::actionLink(
 						inputId = paste0('delete_code_', code),
 						label = ' ',
 						icon = icon('trash')
@@ -319,7 +327,7 @@ function(input, output, session) {
 	})
 
 	# Delete code from an utterance
-	observe({
+	shiny::observe({
 		rock <- get_rock_file()
 		uid <- selected_utterance$uid
 		if(!is.null(uid)) {
@@ -343,36 +351,36 @@ function(input, output, session) {
 		}
 	})
 
-	output$selected_attribues <- renderUI({
+	output$selected_attribues <- shiny::renderUI({
 		ui <- list()
 		rock <- get_rock_file()
 		if(!is.null(rock$attributes[[1]])) {
 			for(i in names(rock$attributes[[1]])) {
-				ui[[length(ui) + 1]] <- textInput(
+				ui[[length(ui) + 1]] <- shiny::textInput(
 					inputId = i,
 					label = i,
 					value = rock$attributes[[1]][i]
 				)
 			}
-			ui[[length(ui) + 1]] <- actionButton(
+			ui[[length(ui) + 1]] <- shiny::actionButton(
 				inputId = 'update_attributes',
 				label = 'Update',
-				icon = icon('floppy-disk')
+				icon = shiny::icon('floppy-disk')
 			)
 		} else {
-			ui <- div('None')
+			ui <- shiny::div('None')
 		}
 		do.call(shiny::div, ui)
 	})
 
-	observeEvent(input$update_attributes, {
+	shiny::observeEvent(input$update_attributes, {
 print('Updating attributes...')
 		# TODO: actually save
 
 	})
 
 	# Raw view of the ROCK file
-	output$document_view_raw <- renderText({
+	output$document_view_raw <- shiny::renderText({
 		rock <- get_rock_file()
 		paste0(rock$sourceDf$utterances_raw, collapse = '\n')
 	})
@@ -380,9 +388,9 @@ print('Updating attributes...')
 	# When the user clicks a different document, collapse the right side bar and make the selected
 	# uid null.
 	selected_rock_file <- reactiveVal('')
-	observeEvent(input$rock_file, {
+	shiny::observeEvent(input$rock_file, {
 		if(input$rock_file != selected_rock_file()) {
-			toggle_sidebar('coding_sidebar', open = FALSE)
+			bslib::toggle_sidebar('coding_sidebar', open = FALSE)
 			selected_utterance$uid <- NULL
 		}
 	})
@@ -390,23 +398,23 @@ print('Updating attributes...')
 	# Bit of a hack for now. If the user tries to expand the right sidebar but an utterance
 	# has not been selected, this will collapse the sidebar. Better option is to disable the
 	# button but I haven't found a way to do that yet.
-	observeEvent(input$coding_sidebar, {
+	shiny::observeEvent(input$coding_sidebar, {
 		if(is.null(selected_utterance$uid)) {
-			toggle_sidebar('coding_sidebar', open = FALSE)
+			bslib::toggle_sidebar('coding_sidebar', open = FALSE)
 		}
 	})
 
 	# Render the document. When a user clicks on a row/line the edit_utterance
 	# event will be triggered by JavaScript.
-	output$document_view <- renderUI({
-		req(input$rock_file)
+	output$document_view <- shiny::renderUI({
+		shiny::req(input$rock_file)
 		rock <- get_rock_file()
 		# TODO: This will collapse the sidebar anytime a code is changed
 		uid <- selected_utterance$uid
 		if(is.null(uid)) {
-			toggle_sidebar('coding_sidebar', open = FALSE)
+			bslib::toggle_sidebar('coding_sidebar', open = FALSE)
 		} else {
-			toggle_sidebar('coding_sidebar', open = TRUE)
+			bslib::toggle_sidebar('coding_sidebar', open = TRUE)
 			df <- rock[["rawSourceDf"]]
 			all_codes <- rock$rawCodings$codes
 			df_selected <- df |> dplyr::filter(uids == uid)
@@ -428,7 +436,7 @@ print('Updating attributes...')
 			} else {
 				utterance_codes <- paste0('[[', utterance_codes, ']]', collapse = ' ')
 			}
-			bgcolor <- 'white'
+			bgcolor <- 'white' # TODO: add to iROCK options
 			if(!is.null(uid)) {
 				if(uid == df[i,]$uids) {
 					bgcolor = utterance_highlight_color
@@ -436,12 +444,12 @@ print('Updating attributes...')
 			}
 			style <- paste0(fixed_style, '; background-color: ', bgcolor, ';')
 			ui[[length(ui) + 1]] <- tags$tr(
-				tags$td(HTML(
+				shiny::tags$td(shiny::HTML(
 					paste0("<div style='", style, "' ",
 						   "onclick='Shiny.onInputChange(\"edit_utterance\", \"",
 						   df[i,]$uids, ";", as.integer(Sys.time()), "\")' ",
 						   ">[[uid=", df[i,]$uids, "]]</div>"))),
-				tags$td(HTML(
+				shiny::tags$td(shiny::HTML(
 					paste0("<div id='div", df[i,]$uids, "'",
 						   "onclick='Shiny.onInputChange(\"edit_utterance\", \"",
 						   df[i,]$uids, ";", as.integer(Sys.time()), "\")' ",
@@ -450,7 +458,7 @@ print('Updating attributes...')
 						   # utterance_codes, # TODO: color code these
 						   "</div>")
 				)),
-				tags$td(HTML(
+				shiny::tags$td(shiny::HTML(
 					paste0("<div style='", style, "' ",
 						   "onclick='Shiny.onInputChange(\"edit_utterance\", \"",
 						   df[i,]$uids, ";", as.integer(Sys.time()), "\")' ",
@@ -464,7 +472,7 @@ print('Updating attributes...')
 	# Event when the user clicks on a row/line to edit.
 	# Note that the event value is uid, semicolon, system time. The time is added
 	# to ensure that Shiny updates when a new row is reselected.
-	observeEvent(input$edit_utterance, {
+	shiny::observeEvent(input$edit_utterance, {
 		rock <- get_rock_file()
 		old_utterance <- selected_utterance$uid
 		if(!is.null(old_utterance)) {
@@ -484,18 +492,18 @@ print('Updating attributes...')
 		shinyjs::runjs(paste0(
 			"document.getElementById('div", selected_utterance$uid, "').style.backgroundColor = 'yellow';"
 		))
-		toggle_sidebar('coding_sidebar', open = TRUE)
+		bslib::toggle_sidebar('coding_sidebar', open = TRUE)
 		selected_utterance$rendered <- TRUE
 	})
 
 	##### Modal editing ############################################################################
-	observeEvent(input$save_utterance, {
+	shiny::observeEvent(input$save_utterance, {
 # print(paste0('Saving ', selected_utterance$uid))
 		selected_utterance$uid <- NULL
-		removeModal()
+		shiny::removeModal()
 	})
 
-	output$document_view_raw <- renderText({
+	output$document_view_raw <- shiny::renderText({
 		req(input$rock_file)
 		rock_file <- paste0(project_dir(), '/', input$rock_file)
 		if(file.exists(rock_file)) {
@@ -506,12 +514,12 @@ print('Updating attributes...')
 	})
 
 	##### File listing #############################################################################
-	rock_files <- reactiveVal()
-	observeEvent(input$project, {
+	rock_files <- shiny::reactiveVal()
+	shiny::observeEvent(input$project, {
 		rock_files(list.files(project_dir(), pattern = '.rock'))
 	})
 
-	output$file_list <- renderUI({
+	output$file_list <- shiny::renderUI({
 		files <- rock_files()
 		nodes <- list()
 		for(i in files) {
@@ -522,7 +530,7 @@ print('Updating attributes...')
 			nodes = nodes
 		)
 		# TODO: use shinyTree instead as it appears shinytreeview will not be published to CRAN
-		treeviewInput(
+		shinytreeview::treeviewInput(
 			inputId = "rock_file",
 			label = "Choose a document:",
 			choices =  nodes,
@@ -531,19 +539,19 @@ print('Updating attributes...')
 		)
 	})
 
-	output$delete_selected_file <- renderUI({
+	output$delete_selected_file <- shiny::renderUI({
 		req(input$rock_file)
 		rock_file <- input$rock_file
 		if(!is.null(rock_file)) {
-			actionButton(
+			shiny::actionButton(
 				inputId = 'delete_file',
 				label = paste0('Delete ', rock_file),
-				icon = icon('trash')
+				icon = shiny::icon('trash')
 			)
 		}
 	})
 
-	observeEvent(input$delete_file, {
+	shiny::observeEvent(input$delete_file, {
 		shinyalert::shinyalert(
 			title = 'Confirm file deletion',
 			text = paste0('Are you sure you want to delete ', input$rock_file, '? ',
@@ -560,7 +568,7 @@ print('Updating attributes...')
 		)
 	})
 
-	observeEvent(input$delete_all_files, {
+	shiny::observeEvent(input$delete_all_files, {
 		shinyalert::shinyalert(
 			title = 'Confirm file deletion',
 			text = paste0('Are you sure you want to delete all files? ',
@@ -584,7 +592,7 @@ print('Updating attributes...')
 		DT::datatable(rock_files$attributesDf, editable = TRUE)
 	})
 
-	observeEvent(input$attributes_table_cell_edit, {
+	shiny::observeEvent(input$attributes_table_cell_edit, {
 		row  <- input$attributes_table_cell_edit$row
 		col <- input$attributes_table_cell_edit$col
 		# TODO: save changes
@@ -608,7 +616,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		return(tree)
 	})
 
-	output$codebook_values <- renderUI({
+	output$codebook_values <- shiny::renderUI({
 		req(input$codebook_tree)
 
 		ui <- list()
@@ -648,8 +656,8 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		do.call(div, ui)
 	})
 
-	observeEvent(input$save_code_edits, {
-		id <- get_selected(input$codebook_tree, format = "classid")[[1]]
+	shiny::observeEvent(input$save_code_edits, {
+		id <- shinyTree::get_selected(input$codebook_tree, format = "classid")[[1]]
 		params <- list(
 			yaml_file = paste0(project_dir(), '/ROCK_codebook.yml'),
 			id = id
@@ -690,9 +698,9 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		return(FUN)
 	}
 
-	output$new_code_ui <- renderUI({
+	output$new_code_ui <- shiny::renderUI({
 		ui <- list()
-		ui[[length(ui) + 1]] <- textInput(
+		ui[[length(ui) + 1]] <- shiny::textInput(
 			inputId = 'new_id',
 			label = 'ID'
 		)
@@ -707,7 +715,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		do.call(div, ui)
 	})
 
-	observeEvent(input$add_new_code, {
+	shiny::observeEvent(input$add_new_code, {
 		params <- list(
 			yaml_file = paste0(project_dir(), '/ROCK_codebook.yml'),
 			id = input$new_id
@@ -716,25 +724,25 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 			params[[i]] <- input[[paste0('new_', i)]]
 		}
 		do.call(new_code, params)
-		removeModal()
+		shiny::removeModal()
 	})
 
-	observeEvent(input$new_code_modal, {
-		showModal(
-			modalDialog(
+	shiny::observeEvent(input$new_code_modal, {
+		shiny::showModal(
+			shiny::modalDialog(
 				title = 'New Code',
-				uiOutput('new_code_ui'),
+				shiny::uiOutput('new_code_ui'),
 				size = 'xl',
 				easyClose = FALSE,
-				footer = tagList(
-					modalButton('Cancel'),
-					actionButton('add_new_code', 'Add')
+				footer = shiny::tagList(
+					shiny::modalButton('Cancel'),
+					shiny::actionButton('add_new_code', 'Add')
 				)
 			)
 		)
 	})
 
-	output$codebook_yaml <- renderUI({
+	output$codebook_yaml <- shiny::renderUI({
 		# TODO: check that file exists
 		codebook_file <- paste0(project_dir(), '/ROCK_codebook.yml')
 		if(file.exists(codebook_file)) {
@@ -752,16 +760,16 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		}
 	})
 
-	output$code_details <- renderUI({
+	output$code_details <- shiny::renderUI({
 		code <- input$codebook_code
 		ui <- list()
 		if(!is.null(code)) {
-			ui[[length(ui) + 1]] <- textInput(
+			ui[[length(ui) + 1]] <- shiny::textInput(
 				inputId = 'code_name',
 				label = 'Code',
 				value = code
 			)
-			ui[[length(ui) + 1]] <- textInput(
+			ui[[length(ui) + 1]] <- shiny::textInput(
 				inputId = 'code_description',
 				label = 'Description'
 			)
@@ -775,9 +783,9 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 	})
 
 	##### Analyses #################################################################################
-	output$file_selection <- renderUI({
+	output$file_selection <- shiny::renderUI({
 		rock_files <- list.files(project_dir(), pattern = '*.rock')
-		checkboxGroupInput(
+		shiny::checkboxGroupInput(
 			inputId = 'file_selection',
 			label = 'Files to include',,
 			choices = rock_files,
@@ -786,7 +794,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		)
 	})
 
-	get_parsed_sources <- eventReactive(input$run_analysis, {
+	get_parsed_sources <- shiny::eventReactive(input$run_analysis, {
 		files <- input$file_selection
 		ps <- rock::parse_sources(
 			project_dir(),
@@ -795,7 +803,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		return(ps)
 	})
 
-	output$analysis_results <- renderUI({
+	output$analysis_results <- shiny::renderUI({
 		ps <- get_parsed_sources()
 		input$run_analysis
 		ui <- list()
@@ -807,14 +815,14 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		do.call(div, ui)
 	})
 
-	output$snoe_plot <- renderPlot({
+	output$snoe_plot <- shiny::renderPlot({
 		ps <- get_parsed_sources()
 		rock::snoe_plot(ps)
 	})
 
-	output$coded_fragments <- renderText({
+	output$coded_fragments <- shiny::renderText({
 		ps <- get_parsed_sources()
-		collect_coded_fragments(
+		rock::collect_coded_fragments(
 			ps,
 			outputViewer = FALSE,
 			rawResult = FALSE,
@@ -825,7 +833,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 
 
 	##### Project export/import ####################################################################
-	output$download_project <- downloadHandler(
+	output$download_project <- shiny::downloadHandler(
 		filename = function() {
 			paste0(input$project, '.ROCKproject')
 		},
