@@ -2,8 +2,8 @@
 #'
 #' @param ... other parameters passed to [shiny::runApp()].
 #' @export
-#' @importFrom shiny runApp
-iROCK_shiny <- function(...) {
+#' @import shiny dplyr rock bslib shinytreeview shinyTree colourpicker yaml shinyAce shinyalert
+iROCK <- function(...) {
 	pkg_dir <- find.package('iROCK')
-	shiny::runApp(appDir = paste0(pkg_dir, '/shiny/'))
+	shiny::runApp(appDir = paste0(pkg_dir, '/shiny/'), ...)
 }

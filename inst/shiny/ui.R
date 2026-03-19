@@ -8,53 +8,53 @@ page_navbar(
     title = 'iROCK',
     id = 'nav',
     navbar_options = navbar_options(collapsible = TRUE),
-    # sidebar = sidebar(
-    #     shinyjs::useShinyjs(debug = TRUE),
-    #     # tags$head(tags$script(type="text/javascript", src="custom.js")),
-    #     conditionalPanel(
-    #         "input.nav == 'Coding'",
-    #         "Documents",
-    #         fileInput(
-    #             inputId = 'upload_files',
-    #             label = 'Upload File(s)',
-    #             multiple = TRUE,
-    #             buttonLabel = 'Browse...',
-    #             placeholder = 'No file selected'
-    #         ),
-    #         uiOutput('file_list')
-    #     )
-    # ),
+	tags$head(
+	    tags$script(src = "https://cdn.jsdelivr.net/npm/sweetalert2@11.10.0/dist/sweetalert2.all.min.js"),
+	    tags$link(rel = "stylesheet", href = "https://cdn.jsdelivr.net/npm/sweetalert2@11.10.0/dist/sweetalert2.min.css"),
+	    tags$script(src = "confirm.js")
+	),
     nav_panel(
         title = "Coding",
         layout_sidebar(
             sidebar = sidebar(
-            	"Documents",
+            	# "Documents",
+            	uiOutput('project_selection'),
+            	actionButton(inputId = 'new_project', label = 'New Project', icon = icon('folder-plus')),
             	fileInput(
             		inputId = 'upload_files',
             		label = 'Upload File(s)',
-            		multiple = TRUE,
+            		multiple = FALSE,
+            		accept = c('.csv', '.txt', '.rock'),
             		buttonLabel = 'Browse...',
             		placeholder = 'No file selected'
             	),
-            	uiOutput('file_list')
+            	uiOutput('file_list'),
+            	hr(),
+            	uiOutput('delete_selected_file'),
+            	actionButton(
+            		inputId = 'delete_all_files',
+            		label = 'Delete all files',
+            		icon = icon('trash')
+            	),
+            	actionButton(
+            		inputId = 'delete_project',
+            		label = 'Delete Project',
+            		icon = icon('trash')
+            	),
+            	downloadButton(
+            		outputId = 'download_project',
+            		label = 'Download Project'
+            	)
             ),
             layout_sidebar(
                 sidebar = sidebar(
                     id = 'coding_sidebar',
                     # 'Coding Options here...',
                     div('Selected ID: ', textOutput('selected_uid')),
-                    uiOutput('code_tree'),
-                    # shinytreeview::treecheckInput(
-                    # 	inputId = 'utterance_codes',
-                    # 	label = 'Codes',
-                    # 	choices = codebook,
-                    # 	borders = FALSE,
-                    # 	multiple = TRUE,
-                    # 	levels = 3,
-                    # 	return_value = 'name'
-                    # ),
-
-                    textOutput(outputId = "tree_selections"),
+                    uiOutput('code_input'),
+                    hr(),
+                    strong('Codes'),
+                    uiOutput('selected_codes'),
                     position = 'right',
                     open = FALSE
                 ),
@@ -63,6 +63,10 @@ page_navbar(
                 		'Coding',
                 		uiOutput('document_view')
                 	),
+                	# tabPanel(
+                	# 	'Attributes',
+                	# 	uiOutput('selected_attribues')
+                	# ),
                 	tabPanel(
                 		'Raw',
                 		verbatimTextOutput('document_view_raw')
@@ -75,22 +79,59 @@ page_navbar(
             shinyjs::useShinyjs(debug = TRUE)
         ),
     ),
+    # nav_panel(
+    #     title = "Attributes",
+    #     DT::dataTableOutput('attributes_table')
+    # ),
     nav_panel(
-        title = "Attributes",
-        "Attributes table here..."
+    	title = "Analysis",
+    	sidebarLayout(
+    		sidebarPanel(
+    			selectInput(
+    				inputId = 'analysis_type',
+    				label = 'Analysis Type',
+    				choices = c('Soft Non-numeric Occurrence Estimation (SNOE) plot' = 'snoe',
+    							'Coded fragments overview' = 'coded_fragments')
+    			),
+    			uiOutput('file_selection'),
+    			actionButton(
+    				inputId = 'run_analysis',
+    				label = 'Run Analysis'
+    			)
+    		),
+    		mainPanel(
+    			uiOutput('analysis_results')
+    		)
+    	)
     ),
     nav_panel(
-        title = 'Setup',
-        fluidRow(
-        	column(
-        		width = 4,
-        		uiOutput('codebook_tree')
+        title = 'Codebook',
+        tabsetPanel(
+        	tabPanel(
+        		'Codes',
+        		fluidRow(
+        			column(
+        				3,
+        				actionButton(
+        					inputId = 'new_code_modal',
+        					label = 'New Code'
+        					# icon = icon('square-plus')
+        				),
+        				br(), br(),
+        				shinyTree("codebook_tree", dragAndDrop=TRUE, sort = FALSE, wholerow = TRUE, unique = TRUE)
+        			),
+        			column(
+        				9,
+        				uiOutput('codebook_values')
+        			)
+        		)
         	),
-        	column(
-        		width = 8,
-        		uiOutput('code_details')
+        	tabPanel(
+        		'YAML',
+        		uiOutput('codebook_yaml')
         	)
         )
+
 
     ),
     nav_spacer(),

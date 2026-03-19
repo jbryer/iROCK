@@ -28,7 +28,7 @@ remotes::install_github('jbryer/iROCK')
 Start the Shiny application:
 
 ``` r
-iROCK::iROCK_shiny()
+iROCK::iROCK()
 ```
 
 ### Development

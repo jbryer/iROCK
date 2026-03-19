@@ -5,3 +5,5 @@
 .DS_Store
 .quarto
 private/
+data-raw/
+inst/shiny/projects/
