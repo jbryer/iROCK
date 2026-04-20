@@ -1,0 +1,38 @@
+ROCK_aesthetics:
+
+  edges:
+  
+    - type: default
+      color: "red"
+      style: "solid"
+      
+    - type: "child_to_parent"
+      color: "blue"
+      style: "solid"
+      arrowhead: "dot"
+      
+  nodes:
+  
+    - type: default
+      fillcolor: "#FFFFFF"
+      fontcolor: "#000000"
+      stroke: "#000000"
+      shape: "box"
+      style: "rounded,filled"
+      
+    - type: "^bcp_"
+      fillcolor: "#8ee9ff"
+      fontcolor: "#000000"
+      stroke: "#000000"
+      
+  graph:
+    layout: "dot"
+    rankdir: "LR"
+    outputorder: "edgesfirst"
+  
+  rank:
+    min: "bcp_"
+    max: "tar_"
+    same:
+      - "apl_"
+      - "det_"

@@ -17,9 +17,11 @@ if(file.exists('../../R/iROCK-package.R') & require(devtools)) {
 	server <- iROCK::iROCK_server
 }
 
-iROCK_options <- iROCK::iROCK_options()
+# iROCK_options <- iROCK::iROCK_options()
 # NOTE: You can change iROCK options here
 # iROCK_options$utterance_highlight_color <- 'yellow'
+# yaml::write_yaml(iROCK_options, file = 'inst/shiny/_iROCK.yml')
+iROCK_options <- yaml::read_yaml('_iROCK.yml')
 
 # Where should projects be save
 projects_dir <- file.path(getwd(), 'projects')

@@ -1,0 +1,19 @@
+ROCK_codebook:
+  codes:
+  - id: newcode
+    label: ''
+    description: ''
+    instruction: ''
+    ucr: ''
+    ucr_prefix: ''
+    ucr_url: ''
+    ucid_url: ''
+    fillcolor: ''
+    color: ''
+  aesthetics:
+  - type: default
+    fillcolor: '#DDDDFF'
+    fontcolor: '#000044'
+    stroke: '#000044'
+    shape: box
+    style: rounded,filled

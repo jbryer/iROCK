@@ -1,8 +1,8 @@
 Type: Package
 Package: iROCK
 Title: Shiny Application for the Reproducible Open Coding Kit
-Version: 0.1.0
-Date: 2025-11-25
+Version: 0.2.0
+Date: 2026-04-13
 Authors@R:
     person("Jason", "Bryer", , "jason@bryer.org", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-2454-0402"))
@@ -20,7 +20,8 @@ Imports:
     rock,
     bslib,
     shinytreeview,
-    colourpicker
+    colourpicker,
+    shinyAce
 Suggests:
     knitr,
     rmarkdown

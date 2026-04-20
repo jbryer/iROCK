@@ -16,7 +16,10 @@ iROCK_server <- function(input, output, session) {
 	})
 
 	output$project_selection <- shiny::renderUI({
-		projects <- list.dirs(path = projects_location, recursive = FALSE, full.names = FALSE)
+		projects <- list.dirs(
+			path = projects_location,
+			recursive = FALSE,
+			full.names = FALSE)
 		shiny::selectInput(
 			inputId = 'project',
 			label = 'Project',
@@ -26,10 +29,41 @@ iROCK_server <- function(input, output, session) {
 
 	# TODO: use file.path instead of paste0 to use system path separator
 	project_dir <- shiny::reactive({
-		path <- paste0(projects_location, '/', input$project, '/')
-		return(path)
+		file.path(projects_location, input$project)
 	})
 
+	project_options_file <- shiny::reactive({
+		file.path(projects_location, input$project, '_ROCKproject.yml')
+	})
+
+	get_project_options <- shiny::reactivePoll(
+		intervalMillis = 500,
+		session = session,
+		checkFunc = function() {
+			rock_file <- project_options_file()
+			if(length(rock_file) == 1) {
+				if(file.exists(rock_file)) {
+					file.info(rock_file)$mtime[1]
+				} else {
+					return("")
+				}
+			} else {
+				return("")
+			}
+		},
+		valueFunc = function() {
+			project <- NULL
+			project_file <- project_options_file()
+			if(length(project_file) == 1) {
+				if(file.exists(project_file)) {
+					project <- yaml::read_yaml(project_file)
+				}
+			}
+			return(project)
+		}
+	)
+
+	##### Project management ###################################################
 	shiny::observeEvent(input$new_project, {
 		shiny::showModal(
 			shiny::modalDialog(
@@ -41,21 +75,55 @@ iROCK_server <- function(input, output, session) {
 				),
 				footer = shiny::tagList(
 					shiny::modalButton('Cancel'),
-					shiny::actionButton(inputId = 'create_new_project', label = 'Create')
+					shiny::actionButton(
+						inputId = 'create_new_project',
+						label = 'Create')
 				)
 			)
 		)
 	})
 
 	shiny::observeEvent(input$delete_project, {
-		# TODO: implement
+		shinyalert::shinyalert(
+			title = 'Confirm Project Deletion',
+			text = paste0('Are you sure you want to delete ', input$project,
+						  ' project? This operation cannot be undone.'),
+			type = 'warning',
+			confirmButtonText = 'Yes',
+			cancelButtonText = 'Cancel',
+			showCancelButton = TRUE,
+			callbackR = function(x) {
+				if(x) {
+					unlink(project_dir(), recursive = TRUE)
+					projects <- list.dirs(
+						path = projects_location,
+						recursive = FALSE,
+						full.names = FALSE)
+					shiny::updateSelectInput(
+						session = session,
+						inputId = 'project',
+						choices = projects
+					)
+				}
+			}
+		)
 	})
 
 	shiny::observeEvent(input$create_new_project, {
 		# TODO: Should make sure the name is good
-		new_dir <- paste0(projects_location, '/', input$new_project_dir)
-		dir.create(path = new_dir)
-		new_rock_codebook(yaml_file = paste0(new_dir, '/ROCK_codebook.yml'))
+		new_dir <- file.path(projects_location, input$new_project_dir)
+		dir.create(path = new_dir, recursive = TRUE)
+		template_dir <- file.path(find.package('iROCK'), 'template')
+		if(!dir.exists(template_dir)) {
+			template_dir <- file.path(find.package('iROCK'), 'inst', 'template')
+			if(!dir.exists(template_dir)) {
+				stop('Could not find template directory!')
+			}
+		}
+		for(i in list.files(template_dir)) {
+			file.copy(from = file.path(template_dir, i),
+					  to = file.path(projects_location, input$new_project_dir, i))
+		}
 		shiny::updateSelectInput(
 			session = session,
 			inputId = 'project',
@@ -65,11 +133,51 @@ iROCK_server <- function(input, output, session) {
 		shiny::removeModal()
 	})
 
+	output$project_properties <- shiny::renderUI({
+		project <- get_project_options()
+		ui <- list()
+		if(is.null(project)) {
+			# TODO: Create new default project file
+			# stop('No _ROCKproject.yml found!')
+		} else {
+			fields <- project[['_ROCKproject']][['project']]
+			for(i in names(fields)) {
+				ui[[length(ui) + 1]] <- shiny::textInput(
+					inputId = paste0('rock_options_', i),
+					label = i,
+					value = fields[[i]],
+					width = '100%'
+				)
+			}
+			ui[[length(ui) + 1]] <- shiny::actionButton(
+				inputId = 'save_project_options',
+				label = 'Save',
+				icon = icon('save')
+			)
+		}
+
+		do.call(shiny::div, ui)
+	})
+
+	observeEvent(input$save_project_options, {
+		project <- get_project_options()
+		fields <- project[['_ROCKproject']][['project']]
+		for(i in names(fields)) {
+			project[['_ROCKproject']][['project']][[i]] <- input[[paste0('rock_options_', i)]]
+		}
+		yaml::write_yaml(
+			project,
+			file = project_options_file()
+		)
+	})
+
+	##### Codebook #############################################################
 	codebook_codes <- shiny::reactive({
 		codebook <- get_codebook_file()
 		codes <- c()
 		if(!is.null(codebook)) {
-			codes <- sapply(codebook[['ROCK_codebook']][['codes']], FUN = function(x) { x[['id']] })
+			codes <- sapply(codebook[['ROCK_codebook']][['codes']],
+							FUN = function(x) { x[['id']] })
 			codes <- as.character(codes)
 			codes <- codes[!is.null(codes)]
 			codes <- codes[codes != 'NULL']
@@ -104,7 +212,8 @@ iROCK_server <- function(input, output, session) {
 		session = session,
 		checkFunc = function() {
 			if(!is.null(input$rock_file)) {
-				rock_file <- shinyTree::get_selected(input$rock_file, format = "classid")[[1]]
+				rock_file <- shinyTree::get_selected(input$rock_file,
+													 format = "classid")[[1]]
 				rock_file <- paste0(project_dir(), '/', rock_file)
 				if(file.exists(rock_file)) {
 					file.info(rock_file)$mtime[1]
@@ -118,7 +227,8 @@ iROCK_server <- function(input, output, session) {
 		valueFunc = function() {
 			rock <- NULL
 			if(!is.null(input$rock_file)) {
-				rock_file <- shinyTree::get_selected(input$rock_file, format = "classid")[[1]]
+				rock_file <- shinyTree::get_selected(input$rock_file,
+													 format = "classid")[[1]]
 				rock_file <- paste0(project_dir(), '/', rock_file)
 				if(file.exists(rock_file)) {
 					if(!file.info(rock_file)$isdir) {
@@ -154,6 +264,8 @@ iROCK_server <- function(input, output, session) {
 		ui[[length(ui) + 1]] <- p(paste0('Uploading file',
 										 ifelse(nrow(files) > 1, 's', ''),
 										 ': ', paste0(files$name, collapse = ', ')))
+
+		file_ext <- tools::file_ext(files[1,]$datapath)
 
 		if(files[1,]$type == 'text/plain') {
 			# TODO: This parameters are currently not used yet
@@ -389,8 +501,8 @@ print('Updating attributes...')
 		paste0(rock$sourceDf$utterances_raw, collapse = '\n')
 	})
 
-	# When the user clicks a different document, collapse the right side bar and make the selected
-	# uid null.
+	# When the user clicks a different document, collapse the right side bar and
+	# make the selected uid null.
 	selected_rock_file <- reactiveVal('')
 	shiny::observeEvent(input$rock_file, {
 		rock_file <- shinyTree::get_selected(input$roc)
@@ -403,9 +515,9 @@ print('Updating attributes...')
 		}
 	})
 
-	# Bit of a hack for now. If the user tries to expand the right sidebar but an utterance
-	# has not been selected, this will collapse the sidebar. Better option is to disable the
-	# button but I haven't found a way to do that yet.
+	# Bit of a hack for now. If the user tries to expand the right sidebar but
+	# an utterance has not been selected, this will collapse the sidebar. Better
+	# option is to disable the button but I haven't found a way to do that yet.
 	shiny::observeEvent(input$coding_sidebar, {
 		if(is.null(selected_utterance$uid)) {
 			bslib::toggle_sidebar('coding_sidebar', open = FALSE)
@@ -505,19 +617,53 @@ print('Updating attributes...')
 	})
 
 	##### Modal editing ########################################################
-	shiny::observeEvent(input$save_utterance, {
-# print(paste0('Saving ', selected_utterance$uid))
-		selected_utterance$uid <- NULL
-		shiny::removeModal()
-	})
+	# shiny::observeEvent(input$save_utterance, {
+	# 	selected_utterance$uid <- NULL
+	# 	shiny::removeModal()
+	# })
 
 	output$document_view_raw <- shiny::renderText({
 		req(input$rock_file)
-		rock_file <- paste0(project_dir(), '/', input$rock_file)
+		rock_file <- shinyTree::get_selected(input$rock_file,
+											 format = "classid")[[1]]
+		rock_file <- paste0(project_dir(), '/', rock_file)
 		if(file.exists(rock_file)) {
 			txt <- scan(file = rock_file, what = character(), sep = '\n', quiet = TRUE)
 			txt <- paste0(txt, collapse = '\n')
 			return(txt)
+		} else {
+			return('')
+		}
+	})
+
+	shiny::observeEvent(input$rock_file, {
+		req(input$rock_file)
+		rock_file <- shinyTree::get_selected(input$rock_file,
+											 format = "classid")[[1]]
+		rock_file <- paste0(project_dir(), '/', rock_file)
+		if(file.exists(rock_file)) {
+			txt <- scan(file = rock_file, what = character(), sep = '\n', quiet = TRUE)
+			txt <- paste0(txt, collapse = '\n')
+			shinyAce::updateAceEditor(
+				session,
+				"document_view_raw_ace",
+				value = txt
+			)
+		}
+	})
+
+	# output$document_view_raw_ace <- shinyAce::aceEditor({
+	#
+	# })
+
+	observe({
+cat(input$document_view_raw_ace)
+		req(input$rock_file)
+		rock_file <- shinyTree::get_selected(input$rock_file,
+											 format = "classid")[[1]]
+		rock_file <- paste0(project_dir(), '/', rock_file)
+		if(file.exists(rock_file)) {
+
 		}
 	})
 
@@ -526,26 +672,6 @@ print('Updating attributes...')
 	shiny::observeEvent(input$project, {
 		rock_files(list.files(project_dir(), pattern = '.rock', recursive = TRUE))
 	})
-
-	# output$file_list <- shiny::renderUI({
-	# 	files <- rock_files()
-	# 	nodes <- list()
-	# 	for(i in files) {
-	# 		nodes[[length(nodes) + 1]] <- list(text = i)
-	# 	}
-	# 	choices <- list(
-	# 		text = 'Data',
-	# 		nodes = nodes
-	# 	)
-	# 	# TODO: use shinyTree instead as it appears shinytreeview will not be published to CRAN
-	# 	shinytreeview::treeviewInput(
-	# 		inputId = "rock_file",
-	# 		label = "Choose a document:",
-	# 		choices =  nodes,
-	# 		width = "100%",
-	# 		multiple = FALSE
-	# 	)
-	# })
 
 	output$rock_file <- shinyTree::renderTree({
 		files <- rock_files()
@@ -559,7 +685,6 @@ print('Updating attributes...')
 	output$delete_selected_file <- shiny::renderUI({
 		req(input$rock_file)
 		rock_file <- shinyTree::get_selected(input$rock_file, format = "classid")[[1]]
-		# rock_file <- input$rock_file
 		if(!is.null(rock_file)) {
 			shiny::actionButton(
 				inputId = 'delete_file',
@@ -587,27 +712,28 @@ print('Updating attributes...')
 		)
 	})
 
-	shiny::observeEvent(input$delete_all_files, {
-		shinyalert::shinyalert(
-			title = 'Confirm file deletion',
-			text = paste0('Are you sure you want to delete all files? ',
-						  'This operation cannot be undone.'),
-			confirmButtonText = 'Yes',
-			showCancelButton = TRUE,
-			cancelButtonText = 'Cancel',
-			callbackR = function(x) {
-				if(x) {
-					all_files <- list.files(project_dir())
-					unlink(paste0(project_dir(), '/', all_files))
-					rock_files(list.files(project_dir(), pattern = '.rock'))
-				}
-			}
-		)
-	})
+	# shiny::observeEvent(input$delete_all_files, {
+	# 	shinyalert::shinyalert(
+	# 		title = 'Confirm file deletion',
+	# 		text = paste0('Are you sure you want to delete all files? ',
+	# 					  'This operation cannot be undone.'),
+	# 		confirmButtonText = 'Yes',
+	# 		showCancelButton = TRUE,
+	# 		cancelButtonText = 'Cancel',
+	# 		callbackR = function(x) {
+	# 			if(x) {
+	# 				all_files <- list.files(project_dir())
+	# 				unlink(paste0(project_dir(), '/', all_files))
+	# 				rock_files(list.files(project_dir(), pattern = '.rock'))
+	# 			}
+	# 		}
+	# 	)
+	# })
 
 	##### Attributes Tables ####################################################
 	output$attributes_table <- DT::renderDT({
-		rock_files <- rock::parse_sources(path = project_dir(), filesWithYAML = yaml_files)
+		yaml_files =
+		rock_files <- rock::parse_sources(path = project_dir())#, filesWithYAML = yaml_files)
 		DT::datatable(rock_files$attributesDf, editable = TRUE)
 	})
 
@@ -857,7 +983,8 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 			paste0(input$project, '.ROCKproject')
 		},
 		content = function(file) {
-			path <- paste0(getwd(), '/', project_dir())
+			# path <- paste0(getwd(), '/', project_dir())
+			path <- project_dir()
 			rock::export_ROCKproject(
 				path = path,
 				output = file

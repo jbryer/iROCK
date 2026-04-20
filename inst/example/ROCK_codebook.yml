@@ -1,0 +1,77 @@
+ROCK_codebook:
+  codes:
+  - id: attitudeExp
+    label: Experiential Attitude
+    description: |
+      A latent disposition or tendency to respond with some degree of favorableness or unfavorableness to the target behavior based on what one expects to experience if engaging in the target behavior.
+    instruction: |
+      Expressions that demonstrate or imply affective aspects of the latent disposition or tendency to respond favourably versus unfavourably to the target behaviour at a very general level (e.g. "Face masks just feel bad."). If the expressions are more specific, relating to specific experiences, sensations, or feelings (e.g. "I don't like the way face masks feel against my skin"), code them as [[..........]].
+      Manifestations that express favourableness or unfavourableness to the target behaviour based on the perceived usefulness of engaging in the target behaviour to achieving one’s goals (e.g. "Face masks don't help") should be coded as attitudeInstr. If the expressions are so general and vague that they don't clearly relate to experiential aspects of attitude, code them as attitude.
+    ucr: attitudeExp_836ypncg
+    ucr_prefix: https://comms.opens.science/codes/
+    ucr_url: https://comms.opens.science/codes/attitudeExp_836ypncg
+    ucid_url: https://psycore.one/experientialAttitude_73dnt5z5
+    fillcolor: '#FFCCCC'
+    color: '#440000'
+    examples:
+    - example_fragment: |
+        Some example data fragment for an edge case.
+      obviousness: edge
+      match: match
+      explanation: |
+        The explanation of why this fragment contains the characteristics that justify coding it with this code.
+    relationships:
+    - to_code_id: attitude
+      relationship_type: child_to_parent
+  - id: attitude
+    code_label: Attitude
+  - id: attitudeInstr
+    label: Instrumental Attitude
+    description: |
+      A latent disposition or tendency to respond with some degree of favorableness or unfavorableness to the target behavior based on the perceived usefulness of engaging in that target behavior to achieving one’s goals.
+    instruction: |
+      Expressions that demonstrate or imply aspects of the latent disposition or tendency to respond favourably versus unfavourably to the target behaviour based on the perceived usefulness of engaging in the target behaviour to achieving one’s goals, for example using the semantic differentials ‘wise’/‘unwise’ or ‘good’/‘bad’.
+      Manifestations that express affective aspects of favourableness or unfavourableness to the target behaviour should be coded attitudeExpr.
+    ucr: attitudeInstr_836zztl1
+    ucr_prefix: https://comms.opens.science/codes/
+    ucr_url: https://comms.opens.science/codes/attitudeInstr_836zztl1
+    ucid_url: https://psycore.one/instrumentalAttitude_73dnt5zb
+    fillcolor: '#FFCCCC'
+    color: '#440000'
+    examples:
+    - example_fragment: |
+        Some example data fragment for an edge case.
+      obviousness: edge
+      match: match
+      explanation: |
+        The explanation of why this fragment contains the characteristics that justify coding it with this code.
+    relationships:
+    - to_code_id: attitude
+      relationship_type: child_to_parent
+  - id: ' '
+    label: ''
+    description: ''
+    instruction: ''
+    ucr: ''
+    ucr_prefix: ''
+    ucr_url: ''
+    ucid_url: ''
+    fillcolor: ''
+    color: ''
+  - id: newcode
+    label: ''
+    description: ''
+    instruction: ''
+    ucr: ''
+    ucr_prefix: ''
+    ucr_url: ''
+    ucid_url: ''
+    fillcolor: ''
+    color: ''
+  aesthetics:
+  - type: default
+    fillcolor: '#DDDDFF'
+    fontcolor: '#000044'
+    stroke: '#000044'
+    shape: box
+    style: rounded,filled

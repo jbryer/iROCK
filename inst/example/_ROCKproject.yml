@@ -1,0 +1,26 @@
+_ROCKproject:
+  project:
+    title: ROCK v1 Example Project 1
+    authors: Authors
+    authorIds: ~
+    version: '1.0'
+    ROCK_version: '1.0'
+    ROCK_project_version: '1.0'
+    date_created: 2026-02-20 22:28:24 CET
+    date_modified: 2026-02-20 22:28:24 CET
+  codebook:
+    urcid: ''
+    embedded: ~
+    local: ROCK_codebook.yml
+  sources:
+    extension: .rock
+    regex: ~
+    dirsToIncludeRegex: data/
+    recursive: yes
+    dirsToExcludeRegex: ~
+    filesToIncludeRegex: ~
+    filesToExcludeRegex: ~
+  workflow:
+    pipeline: ~
+    actions: ~
+  extra: ~

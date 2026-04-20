@@ -21,16 +21,34 @@ iROCK_ui <- function() {
 			shiny::tags$link(rel = "stylesheet", href = "https://cdn.jsdelivr.net/npm/sweetalert2@11.10.0/dist/sweetalert2.min.css"),
 			shiny::tags$script(src = "confirm.js")
 		),
+		bslib::nav_panel(
+			title = "Project",
+			bslib::layout_sidebar(
+				sidebar = bslib::sidebar(
+					shiny::uiOutput('project_selection'),
+					shiny::actionButton(
+						inputId = 'new_project',
+						label = 'New Project',
+						icon = shiny::icon('folder-plus')),
+					shiny::actionButton(
+						inputId = 'delete_project',
+						label = 'Delete Project',
+						icon = shiny::icon('trash')
+					),
+					shiny::downloadButton(
+						outputId = 'download_project',
+						label = 'Download Project'
+					),
+				),
+				shiny::uiOutput('project_properties')
+			),
+
+		),
 	    bslib::nav_panel(
 	        title = "Coding",
 	        bslib::layout_sidebar(
 	            sidebar = bslib::sidebar(
 	            	# "Documents",
-	            	shiny::uiOutput('project_selection'),
-	            	shiny::actionButton(
-	            		inputId = 'new_project',
-	            		label = 'New Project',
-	            		icon = shiny::icon('folder-plus')),
 	            	shiny::fileInput(
 	            		inputId = 'upload_files',
 	            		label = 'Upload File(s)',
@@ -39,7 +57,6 @@ iROCK_ui <- function() {
 	            		buttonLabel = 'Browse...',
 	            		placeholder = 'No file selected'
 	            	),
-	            	# shiny::uiOutput('file_list'),
 	            	shinyTree::shinyTree(
 	            		outputId = 'rock_file',
 	            		search = FALSE,
@@ -48,20 +65,11 @@ iROCK_ui <- function() {
 	            	),
 	            	shiny::hr(),
 	            	shiny::uiOutput('delete_selected_file'),
-	            	shiny::actionButton(
-	            		inputId = 'delete_all_files',
-	            		label = 'Delete all files',
-	            		icon = shiny::icon('trash')
-	            	),
-	            	shiny::actionButton(
-	            		inputId = 'delete_project',
-	            		label = 'Delete Project',
-	            		icon = shiny::icon('trash')
-	            	),
-	            	shiny::downloadButton(
-	            		outputId = 'download_project',
-	            		label = 'Download Project'
-	            	)
+	            	# shiny::actionButton(
+	            	# 	inputId = 'delete_all_files',
+	            	# 	label = 'Delete all files',
+	            	# 	icon = shiny::icon('trash')
+	            	# ),
 	            ),
 	            bslib::layout_sidebar(
 	                sidebar = bslib::sidebar(
@@ -86,7 +94,23 @@ iROCK_ui <- function() {
 	                	# ),
 	                	shiny::tabPanel(
 	                		'Raw',
-	                		shiny::verbatimTextOutput('document_view_raw')
+	                		# shiny::verbatimTextOutput('document_view_raw')
+	                		# TODO: put some of the parameters in the _iROCK.yml file
+	                		shinyAce::aceEditor(
+	                			outputId = 'document_view_raw_ace',
+	                			selectionId = "selection",
+	                			value = NULL,
+	                			placeholder = "Select a document in the left menu...",
+	                			debounce = 4000, # How long (in milliseconds) before updates are sent to the server
+	                			readOnly = FALSE,
+	                			theme = aceEditor$theme,
+	                			fontSize = aceEditor$fontSize,
+	                			wordWrap = aceEditor$wordWrap,
+	                			showLineNumbers = aceEditor$showLineNumbers,
+	                			highlightActiveLine = aceEditor$highlightActiveLine,
+	                			showPrintMargin = aceEditor$showPrintMargin,
+	                			height = aceEditor$height
+	                		)
 	                	)
 	                ),
 	                border = TRUE
@@ -96,10 +120,10 @@ iROCK_ui <- function() {
 	            shinyjs::useShinyjs(debug = TRUE)
 	        ),
 	    ),
-	    # bslib::nav_panel(
-	    #     title = "Attributes",
-	    #     DT::DTOutput('attributes_table')
-	    # ),
+	    bslib::nav_panel(
+	        title = "Attributes",
+	        DT::DTOutput('attributes_table')
+	    ),
 	    bslib::nav_panel(
 	    	title = "Analysis",
 	    	shiny::sidebarLayout(
