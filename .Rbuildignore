@@ -5,3 +5,5 @@
 data-raw/
 private/
 data-raw/
+^\.positai$
+^\.claude$

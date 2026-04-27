@@ -189,8 +189,10 @@ iROCK_server <- function(input, output, session) {
 		intervalMillis = 500,
 		session = session,
 		checkFunc = function() {
-			codebook_file <- paste0(project_dir(), '/ROCK_codebook.yml')
-			if(file.exists(codebook_file)) {
+			codebook_file <- file.path(project_dir(), 'ROCK_codebook.yml')
+			if(length(codebook_file) == 0) {
+				return("")
+			} else if(file.exists(codebook_file)) {
 				file.info(codebook_file)$mtime[1]
 			} else {
 				return("")
@@ -198,7 +200,7 @@ iROCK_server <- function(input, output, session) {
 		},
 		valueFunc = function() {
 			codebook <- NULL
-			codebook_file <- paste0(project_dir(), '/ROCK_codebook.yml')
+			codebook_file <- file.path(project_dir(), 'ROCK_codebook.yml')
 			if(file.exists(codebook_file)) {
 				codebook <- yaml::read_yaml(codebook_file)
 			}
@@ -206,7 +208,10 @@ iROCK_server <- function(input, output, session) {
 		}
 	)
 
+	##### Get currently selected ROCK file #####################################
 	# Using a reactivePoll in case the file is changed outside the Shiny app
+	# This also insures that it is updated when the file is edited using the
+	# raw view.
 	get_rock_file <- shiny::reactivePoll(
 		intervalMillis = 500,
 		session = session,
@@ -229,10 +234,29 @@ iROCK_server <- function(input, output, session) {
 			if(!is.null(input$rock_file)) {
 				rock_file <- shinyTree::get_selected(input$rock_file,
 													 format = "classid")[[1]]
-				rock_file <- paste0(project_dir(), '/', rock_file)
+				rock_file <- file.path(project_dir(), rock_file)
 				if(file.exists(rock_file)) {
 					if(!file.info(rock_file)$isdir) {
-						rock <- rock::parse_source(rock_file)
+						rock <- rock::parse_source(
+							rock_file,
+							filesWithYAML = file.path(project_dir(), 'ROCK_attributes.yml')
+						)
+						# Make sure all codes are in the codebook
+						used_codes <- rock$rawCodings$codes
+						codebook <- get_codebook_file()
+						if(codebook == '') {
+							warning('ROCK_codebook.yml not found.')
+						} else {
+							existing_codes <- sapply(codebook$ROCK_codebook$codes, FUN = function(x) {
+								x[['id']]
+							})
+							missing_codes <- used_codes[!used_codes %in% existing_codes]
+							for(new_code in missing_codes) {
+								add_code_to_codebook(
+									codebook_file = file.path(project_dir(), 'ROCK_codebook.yml'),
+									code = new_code)
+							}
+						}
 					}
 				}
 			}
@@ -383,6 +407,18 @@ iROCK_server <- function(input, output, session) {
 		)
 	})
 
+	# TODO: add this as a package function
+	add_code_to_codebook <- function(codebook_file, code) {
+		params <- list(
+			id = code,
+			yaml_file = codebook_file
+		)
+		for(i in code_attributes) {
+			params[[i]] <- ''
+		}
+		do.call(new_code, params)
+	}
+
 	shiny::observeEvent(input$new_code, {
 		if(input$new_code != '') {
 			code_pattern <- "^[A-Za-z][A-Za-z0-9_]+$"
@@ -398,14 +434,9 @@ iROCK_server <- function(input, output, session) {
 					add_code = input$new_code)
 				# Add code to codebook
 				if(!input$new_code %in% codebook_codes()) {
-					params <- list(
-						id = input$new_code,
-						yaml_file = codebook_file <- paste0(project_dir(), '/ROCK_codebook.yml')
-					)
-					for(i in code_attributes) {
-						params[[i]] <- ''
-					}
-					do.call(new_code, params)
+					add_code_to_codebook(
+						codebook_file = paste0(project_dir(), '/ROCK_codebook.yml'),
+						code = input$new_code)
 				}
 			}
 
@@ -419,8 +450,59 @@ iROCK_server <- function(input, output, session) {
 
 	# Render list of existing codes for utterance
 	output$selected_codes <- shiny::renderUI({
+		current_code_edit()
 		rock <- get_rock_file()
 		ui <- list()
+		uid <- selected_utterance$uid
+		codebook <- get_codebook_file()
+		if(!is.null(uid)) {
+			df <- rock[["rawSourceDf"]]
+			all_codes <- rock$rawCodings$codes
+			df_selected <- df |> dplyr::filter(uids == uid)
+			codes <- all_codes[df_selected[,all_codes] == 1]
+			for(code in codes) {
+				code_pos <- sapply(codebook[['ROCK_codebook']][['codes']], FUN = function(x) {
+					x['id'] == code
+				}) |> which()
+				link_color <- ''
+				if(length(code_pos) > 1) {
+					warning(paste0(code, ' was found more than once in the codebook.'))
+					code_pos <- code_pos[1]
+				} else if(length(code_pos) == 0) {
+					warning(paste0(code, ' was not found in the codebook'))
+				} else {
+					link_color <- codebook[['ROCK_codebook']][['codes']][[code_pos]]$color
+				}
+				if(link_color == '') {
+					link_color <- '#000000'
+				}
+				ui[[length(ui) + 1]] <- div(
+					code,
+					' ',
+					shiny::actionLink(
+						inputId = paste0('edit_code_', code),
+						label = '',
+						icon = icon('edit')
+					),
+					'',
+					shiny::actionLink(
+						inputId = paste0('delete_code_', code),
+						label = '',
+						icon = icon('trash')
+					),
+					style = paste0('color:', link_color, ';')
+					# TODO: add edges here
+				)
+			}
+		}
+		do.call(div, ui)
+	})
+
+	##### Code modal editor ####################################################
+	current_code_edit <- reactiveVal(NULL)
+
+	shiny::observe({
+		rock <- get_rock_file()
 		uid <- selected_utterance$uid
 		if(!is.null(uid)) {
 			df <- rock[["rawSourceDf"]]
@@ -428,18 +510,106 @@ iROCK_server <- function(input, output, session) {
 			df_selected <- df |> dplyr::filter(uids == uid)
 			codes <- all_codes[df_selected[,all_codes] == 1]
 			for(code in codes) {
-				ui[[length(ui) + 1]] <- div(
-					code, ' ',
-					shiny::actionLink(
-						inputId = paste0('delete_code_', code),
-						label = ' ',
-						icon = icon('trash')
-					)
-					# TODO: add edges here
-				)
+				val <- input[[paste0('edit_code_', code)]]
+				if(!is.null(val)) {
+					if(val == 1) {
+						current_code_edit(code)
+						shiny::showModal(edit_code_modal())
+					}
+				}
 			}
 		}
-		do.call(div, ui)
+	})
+
+	edit_code_modal <- function() {
+		selected_code <- current_code_edit()
+		codebook <- get_codebook_file()
+		codes <- codebook[['ROCK_codebook']][['codes']]
+		selected_code_pos <- which(sapply(codes, FUN = function(x) { x['id'] == selected_code }))
+
+		# If there is not color current define one, define it.
+		# TODO: may want to get the next color from the palettes vector
+		current_color <- codes[[selected_code_pos]]['color']
+		if(is.null(current_color) | current_color == '') {
+			current_color = '#000000'
+		}
+		current_fill_color <- codes[[selected_code_pos]]['fillcolor']
+		if(is.null(current_fill_color) | current_fill_color == '') {
+			current_fill_color = '#FFFFFF'
+		}
+
+		shiny::modalDialog(
+			title = paste0('Edit code: ', selected_code),
+			shiny::textInput(
+				inputId = 'code_edit_label',
+				label = 'Label:',
+				value = codes[[selected_code_pos]]['label'],
+				width = '100%'
+			),
+			shiny::textInput(
+				inputId = 'code_edit_description',
+				label = 'Description:',
+				value = codes[[selected_code_pos]]['description'],
+				width = '100%'
+			),
+			shiny::textInput(
+				inputId = 'code_edit_instruction',
+				label = 'Instruciton:',
+				value = codes[[selected_code_pos]]['instruction'],
+				width = '100%'
+			),
+			shiny::fluidRow(
+				column(
+					width = 6,
+					colourpicker::colourInput(
+						inputId = 'code_edit_color',
+						label = 'Color:',
+						value = current_color
+					)
+				),
+				column(
+					width = 6,
+					colourpicker::colourInput(
+						inputId = 'code_edit_fillcolor',
+						label = 'Fill color:',
+						value = current_fill_color
+					)
+				)
+			),
+			footer = shiny::tagList(
+				shiny::actionButton(
+					inputId = 'cancel_code_edit',
+					label = 'Cancel'
+				),
+				shiny::actionButton(
+					inputId = 'save_code_edit',
+					label = 'Save',
+					icon = shiny::icon('save'))
+			)
+		)
+	}
+
+	shiny::observeEvent(input$cancel_code_edit, {
+		current_code_edit(NULL)
+		shiny::removeModal()
+	})
+
+	shiny::observeEvent(input$save_code_edit, {
+		codebook <- get_codebook_file()
+		selected_code <- current_code_edit()
+		codes <- codebook[['ROCK_codebook']][['codes']]
+		selected_code_pos <- which(sapply(codes, FUN = function(x) { x['id'] == selected_code }))
+
+		fields <- names(input)[substr(names(input), 1, 10) == 'code_edit_']
+		for(i in fields) {
+			field <- substr(i, 11, nchar(i))
+			codebook[['ROCK_codebook']][['codes']][[selected_code_pos]][[field]] <- input[[i]]
+		}
+		codebook_file <- file.path(project_dir(), 'ROCK_codebook.yml')
+		yaml::write_yaml(codebook, codebook_file)
+
+		current_code_edit(NULL)
+		shiny::removeModal()
 	})
 
 	# Delete code from an utterance
@@ -467,26 +637,66 @@ iROCK_server <- function(input, output, session) {
 		}
 	})
 
+	##### Attributes ###########################################################
 	output$selected_attribues <- shiny::renderUI({
 		ui <- list()
 		rock <- get_rock_file()
 		if(!is.null(rock$attributes[[1]])) {
 			for(i in names(rock$attributes[[1]])) {
-				ui[[length(ui) + 1]] <- shiny::textInput(
-					inputId = i,
-					label = i,
-					value = rock$attributes[[1]][i]
-				)
+				if(i != 'cid') {
+					ui[[length(ui) + 1]] <- shiny::textInput(
+						inputId = i,
+						label = i,
+						value = rock$attributes[[1]][i],
+						width = '100%'
+					)
+				}
 			}
-			ui[[length(ui) + 1]] <- shiny::actionButton(
-				inputId = 'update_attributes',
-				label = 'Update',
-				icon = shiny::icon('floppy-disk')
+			ui[[length(ui) + 1]] <- shiny::div(
+				shiny::actionButton(
+					inputId = 'update_attributes',
+					label = 'Update',
+					icon = shiny::icon('floppy-disk')
+				),
+				shiny::actionButton(
+					inputId = 'new_attribute',
+					label = 'New Attribute',
+					icon = shiny::icon('square-plus')
+				)
 			)
 		} else {
 			ui <- shiny::div('None')
 		}
 		do.call(shiny::div, ui)
+	})
+
+	shiny::observeEvent(input$new_attribute, {
+		shiny::showModal(
+			shiny::modalDialog(
+				shiny::div('Add new attribute:'),
+				shiny::textInput(
+					inputId = 'new_attribute_name',
+					label = 'Name',
+					value = '',
+					width = '100%'
+				),
+				shiny::textInput(
+					inputId = 'new_attribute_value',
+					label = 'Value',
+					value = '',
+					width = '100%'
+				),
+				footer = shiny::tagList(
+					shiny::modalButton('Cancel'),
+					shiny::actionButton('add_new_attribute', 'Save')
+				)
+			)
+		)
+	})
+
+	observeEvent(input$add_new_attribute, {
+# TODO: implement
+		shiny::removeModal()
 	})
 
 	shiny::observeEvent(input$update_attributes, {
@@ -547,6 +757,7 @@ print('Updating attributes...')
 		if(is.null(codes)) {
 			codes <- c()
 		}
+		codebook <- get_codebook_file()
 		for(i in seq_len(nrow(df))) {
 			utterance_codes <- codes[rock$sourceDf[i,codes,drop=FALSE] == 1]
 			if(is.null(utterance_codes)) {
@@ -554,6 +765,29 @@ print('Updating attributes...')
 			} else if(length(utterance_codes) == 0) {
 				utterance_codes <- ''
 			} else {
+				# ids <- sapply(codebook[['ROCK_codebook']][['codes']], FUN = function(x) { x[['id']] })
+				# # utterance_codes %in% ids
+				# code_pos <- sapply(utterance_codes, FUN = function(x) {
+				# 	sapply(codebook[['ROCK_codebook']][['codes']], FUN = function(x2) {
+				# 		x2[['id']] == x
+				# 	}) |> which()
+				# })
+				# colors = sapply(codebook[['ROCK_codebook']][['codes']][code_pos], FUN = function(x) {
+				# 	x[['color']]
+				# })
+				# colors[which(colors == '')] <- '#000000' # Make undefined colors black
+				#
+				# utterance_str <- ''
+				# for(i in seq_len(length(utterance_codes))) {
+				# 	utterance_str <- paste0(
+				# 		utterance_str,
+				# 		# TODO: This is not working.
+				# 		# '<div style="color:', colors[i], ';">[[', utterance_codes[i], ']]</div>'
+				# 		'[[', utterance_codes[i], ']]'
+				# 	)
+				# }
+				# utterance_codes <- utterance_str
+
 				utterance_codes <- paste0('[[', utterance_codes, ']]', collapse = ' ')
 			}
 			bgcolor <- 'white' # TODO: add to iROCK options
@@ -622,6 +856,7 @@ print('Updating attributes...')
 	# 	shiny::removeModal()
 	# })
 
+	##### Raw editor ###########################################################
 	output$document_view_raw <- shiny::renderText({
 		req(input$rock_file)
 		rock_file <- shinyTree::get_selected(input$rock_file,
@@ -652,18 +887,17 @@ print('Updating attributes...')
 		}
 	})
 
-	# output$document_view_raw_ace <- shinyAce::aceEditor({
-	#
-	# })
-
 	observe({
-cat(input$document_view_raw_ace)
 		req(input$rock_file)
 		rock_file <- shinyTree::get_selected(input$rock_file,
 											 format = "classid")[[1]]
-		rock_file <- paste0(project_dir(), '/', rock_file)
-		if(file.exists(rock_file)) {
-
+		rock_file <- file.path(project_dir(), rock_file)
+		if(file.exists(rock_file) & input$document_view_raw_ace != '') {
+			rock_file_raw <- scan(file = rock_file, what = character()) |>
+				paste0(collapse = '\n')
+			if(rock_file_raw != input$document_view_raw_ace)
+print(paste0('Updating ', rock_file, ' from raw editor...'))
+			cat(input$document_view_raw_ace, file = rock_file)
 		}
 	})
 
@@ -732,9 +966,16 @@ cat(input$document_view_raw_ace)
 
 	##### Attributes Tables ####################################################
 	output$attributes_table <- DT::renderDT({
-		yaml_files =
-		rock_files <- rock::parse_sources(path = project_dir())#, filesWithYAML = yaml_files)
-		DT::datatable(rock_files$attributesDf, editable = TRUE)
+		yaml_files = c('ROCK_aesthetics.yml', 'ROCK_attributes.yml', 'ROCK_codebook.yml')
+		yaml_files <- file.path(project_dir(), yaml_files)
+		rock_files <- rock::parse_sources(path = project_dir(), filesWithYAML = yaml_files)
+		DT::datatable(rock_files$attributesDf,
+					  editable = TRUE,
+					  selection = 'single'
+					  # options = list(
+					  #
+					  # )
+		)
 	})
 
 	shiny::observeEvent(input$attributes_table_cell_edit, {

@@ -75,7 +75,7 @@ update_code <- function(
 #' @param yaml_file path to the YAML file (i.e. ROCK_codebook.yml).
 #' @param id the ID for the new code.
 #' @param ... any other fields to include with the new code.
-#' @return the newly parsed codefile (see [yaml::read_yaml()])
+#' @return the newly parsed codebook file (see [yaml::read_yaml()])
 #' @rdname rock-codebook
 #' @export
 new_code <- function(

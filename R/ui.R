@@ -74,7 +74,6 @@ iROCK_ui <- function() {
 	            bslib::layout_sidebar(
 	                sidebar = bslib::sidebar(
 	                    id = 'coding_sidebar',
-	                    # 'Coding Options here...',
 	                    shiny::div('Selected ID: ', shiny::textOutput('selected_uid')),
 	                    shiny::uiOutput('code_input'),
 	                    shiny::hr(),
@@ -85,17 +84,12 @@ iROCK_ui <- function() {
 	                ),
 	                shiny::tabsetPanel(
 	                	shiny::tabPanel(
-	                		'Coding',
+	                		title = 'Coding',
 	                		shiny::uiOutput('document_view')
 	                	),
-	                	# shiny::tabPanel(
-	                	# 	'Attributes',
-	                	# 	shiny::uiOutput('selected_attribues')
-	                	# ),
 	                	shiny::tabPanel(
-	                		'Raw',
-	                		# shiny::verbatimTextOutput('document_view_raw')
-	                		# TODO: put some of the parameters in the _iROCK.yml file
+	                		title = 'Raw',
+	                		# Full list of options here: https://github.com/trestletech/shinyAce
 	                		shinyAce::aceEditor(
 	                			outputId = 'document_view_raw_ace',
 	                			selectionId = "selection",
@@ -111,6 +105,10 @@ iROCK_ui <- function() {
 	                			showPrintMargin = aceEditor$showPrintMargin,
 	                			height = aceEditor$height
 	                		)
+	                	),
+	                	shiny::tabPanel(
+	                		title = 'Attributes',
+	                		shiny::uiOutput('selected_attribues')
 	                	)
 	                ),
 	                border = TRUE
@@ -182,7 +180,11 @@ iROCK_ui <- function() {
 	    ),
 		shiny::uiOutput('about_tab'),
 		bslib::nav_spacer(),
-		bslib::nav_item(link_rock)
+		bslib::nav_item(shiny::tags$a(
+			"🤘 ROCK",
+			href = "https://rock.science",
+			target = "_blank"
+		))
 	)
 }
 
