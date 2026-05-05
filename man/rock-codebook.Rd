@@ -27,7 +27,7 @@ new_code(yaml_file, id, ...)
 \value{
 the YAML file.
 
-the newly parsed codefile (see \code{\link[yaml:read_yaml]{yaml::read_yaml()}})
+the newly parsed codebook file (see \code{\link[yaml:read_yaml]{yaml::read_yaml()}})
 }
 \description{
 Create a new ROCK codebook.

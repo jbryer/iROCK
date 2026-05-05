@@ -181,7 +181,7 @@ iROCK_ui <- function() {
 		shiny::uiOutput('about_tab'),
 		bslib::nav_spacer(),
 		bslib::nav_item(shiny::tags$a(
-			"🤘 ROCK",
+			Rmoji::insert_emoji('love_you_gesture'), " ROCK",
 			href = "https://rock.science",
 			target = "_blank"
 		))
