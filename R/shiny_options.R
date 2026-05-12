@@ -36,7 +36,7 @@ iROCK_options <- function(app_dir) {
 							 'ucr', 'ucr_prefix', 'ucr_url', 'ucid_url',
 							 'fillcolor', 'color'),
 
-		code_attribute_types = c(
+		code_attribute_types = list(
 			description = 'textAreaInput',
 			instruction = 'textAreaInput',
 			color = 'colourInput',
