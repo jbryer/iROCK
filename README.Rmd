@@ -39,7 +39,7 @@ remotes::install_github('jbryer/iROCK')
 Start the Shiny application:
 
 ```{r, eval=FALSE}
-iROCK::iROCK(project_dir = 'inst/shiny/projects')
+iROCK::iROCK('myROCK')
 ```
 
 Alternatively, you can deply the iROCK Shiny application using your own projects by using the template below. 

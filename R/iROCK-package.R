@@ -1,7 +1,7 @@
 #' Run the iROCK Shiny application
 #'
 #' @param app_dir directory where to run the iROCK Shiny application.
-#' @param project_dir directory where ROCK project files are located. The default is the `project`
+#' @param projects_dir directory where ROCK project files are located. The default is the `project`
 #'        subdirectory to `app_dir`.
 #' @param options the results of [iROCK::iROCK_options()]
 #' @param ... other parameters passed to [shiny::shinyApp()].
@@ -10,7 +10,7 @@
 #' @rdname iROCK
 iROCK <- function(
 	app_dir = getwd(),
-	project_dir = file.path(app_dir, 'projects'),
+	projects_dir = file.path(app_dir, 'projects'),
 	options = iROCK_options(app_dir),
 	...
 ) {
@@ -18,13 +18,45 @@ iROCK <- function(
 	server <- iROCK_server
 
 	app_env <- new.env()
-	assign('projects_location', project_dir, app_env)
+	assign('projects_location', projects_dir, app_env)
 	for(i in names(options)) {
 		assign(i, options[[i]], app_env)
 	}
 
 	for(i in names(iROCK_options)) {
 		assign(i, iROCK_options[[i]], app_env)
+	}
+
+	if(!file.exists(file.path(app_dir, '_iROCK.yml'))) {
+		ans <- utils::menu(
+			title = paste0('Would you like to create a new iROCK project?\n', app_dir),
+			choices = c('Yes', 'No')
+		)
+		if(ans == 2) {
+			return(FALSE)
+		} else if(ans == 1) {
+			if(!dir.exists(app_dir)) {
+				dir.create(app_dir, recursive = TRUE, showWarnings = FALSE)
+			}
+			message(paste0('Copying _iROCK.yml to ', app_dir))
+			yaml::write_yaml(iROCK_options, file = file.path(app_dir, '_iROCK.yml'))
+		}
+		ans <- utils::menu(
+			title = 'Would you like to create an app.R file?',
+			choices = c('Yes', 'No')
+		)
+		if(ans == 1) {
+			file.copy(
+				from = file.path(find.package('iROCK'), 'shiny', 'app.R'),
+				to = file.path(app_dir, 'app.R')
+			)
+
+		}
+	}
+
+	if(!dir.exists(projects_dir)) {
+		message(paste0('Creating projects directory: ', projects_dir))
+		dir.create(projects_dir, recursive = TRUE, showWarnings = FALSE)
 	}
 
 	environment(ui) <- as.environment(app_env)
