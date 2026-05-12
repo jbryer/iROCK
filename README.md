@@ -27,7 +27,7 @@ remotes::install_github('jbryer/iROCK')
 Start the Shiny application:
 
 ``` r
-iROCK::iROCK(app_dir = 'myROCK')
+iROCK::iROCK('myROCK')
 ```
 
 Alternatively, you can deply the iROCK Shiny application using your own
@@ -37,8 +37,14 @@ projects by using the template below.
 library(iROCK)
 library(shiny)
 
+# Where should projects be save
+projects_dir <- file.path(getwd(), 'projects')
+
+##### DO NOT CHANGE BELOW ######################################################
 ui <- server <- NULL
 
+################################################################################
+# TODO: Delete this before releasing to CRAN
 # For development purposes. If the the app.R is run from the source tree then
 # we will source the server.R and ui.R scripts. Otherwise we will use
 # the functions in the installed package.
@@ -52,17 +58,25 @@ if(file.exists('../../R/iROCK-package.R') & require(devtools)) {
     ui <- iROCK::iROCK_ui
     server <- iROCK::iROCK_server
 }
+################################################################################
 
-# iROCK_options <- iROCK::iROCK_options()
-# NOTE: You can change iROCK options here
-# iROCK_options$utterance_highlight_color <- 'yellow'
-# yaml::write_yaml(iROCK_options, file = 'inst/shiny/_iROCK.yml')
-iROCK_options <- yaml::read_yaml('_iROCK.yml')
+# Read _iROCK.yml and add any missing options
+default_iROCK_options <- iROCK::iROCK_options(getwd())
+iROCK_options <- NULL
+if(file.exists('_iROCK.yml')) {
+    iROCK_options <- yaml::read_yaml('_iROCK.yml')
+    # If new options are defined in iROCK_options() then add them to _iROCK.yml
+    missing_options <- names(default_iROCK_options)[
+        !names(default_iROCK_options) %in% names(iROCK_options)]
+    for(i in missing_options) {
+        iROCK_options[[i]] <- default_iROCK_options[[i]]
+    }
+} else {
+    iROCK_options <- default_iROCK_options
+}
 
-# Where should projects be save
-projects_dir <- file.path(getwd(), 'projects')
+yaml::write_yaml(iROCK_options, file = '_iROCK.yml')
 
-##### DO NOT CHANGE BELOW ######################################################
 # Assign environment variable for the UI and server
 app_env <- new.env()
 assign('projects_location', projects_dir, app_env)
@@ -71,6 +85,7 @@ for(i in names(iROCK_options)) {
 }
 environment(server) <- as.environment(app_env)
 environment(ui) <- as.environment(app_env)
+
 # Run the Shiny app
 shiny::shinyApp(
     ui = ui,
@@ -78,8 +93,8 @@ shiny::shinyApp(
 )
 ```
 
-You can download the [daacs.csv](data/daacs.csv) file to test the
-features and to follow the directions below.
+You can download the [daacs.csv](inst/test_data/daacs.csv) file to test
+the features and to follow the directions below.
 
 ![](man/figures/01_New_Project.png)
 

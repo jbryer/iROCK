@@ -1,3 +1,10 @@
+# This is required to pass CRAN checks. Since variables in _iROCK.yml are passed
+# to the Shiny server and UI environments, CRAN check prints warnings.
+# The following command will generate the required `utils::globalVariables` call.
+# cat(paste0("utils::globalVariables(c(", paste0("'", names(iROCK::iROCK_options()), "'", collapse = ','), "))"))
+
+utils::globalVariables(c('fixed_style','color_palette','utterance_highlight_color','code_attributes','code_attribute_types','aesthetics','ace_editor_options'))
+
 #' Configuration options for the iROCK Shiny application.
 #'
 #' @param app_dir directory where the Shiny app is located. If the `_iROCK.yml` file exists in
@@ -57,14 +64,16 @@ iROCK_options <- function(app_dir) {
 		)
 	)
 
-	options_file <- file.path(app_dir, '_iROCK.yml')
-	if(file.exists(options_file)) {
-		options <- yaml::read_yaml(options_file)
-		for(i in names(options)) {
-			irock_options[[i]] <- options[[i]]
+	if(!missing(app_dir)) {
+		options_file <- file.path(app_dir, '_iROCK.yml')
+		if(file.exists(options_file)) {
+			options <- yaml::read_yaml(options_file)
+			for(i in names(options)) {
+				irock_options[[i]] <- options[[i]]
+			}
+		} else {
+			warning(paste0('_iROCK.yml not found in ', app_dir, '. Using default values.'))
 		}
-	} else {
-		warning(paste0('_iROCK.yml not found in ', app_dir, '. Using default values.'))
 	}
 
 	return(irock_options)

@@ -1,3 +1,5 @@
+utils::globalVariables(c('projects_location', 'uids', 'projects_dir', 'originalSource'))
+
 #' iROCK Shiny Server
 #'
 #' @param input Shiny input object.
@@ -303,7 +305,7 @@ iROCK_server <- function(input, output, session) {
 				value = TRUE
 			)
 		} else if(files[1,]$type == 'text/csv') {
-			df <- read.csv(files[1,]$datapath)
+			df <- utils::read.csv(files[1,]$datapath)
 
 			# Guess the text column
 			df_char <- df[,sapply(df, class) == 'character',drop=FALSE]
@@ -369,7 +371,7 @@ iROCK_server <- function(input, output, session) {
 				)
 			}
 		} else if(files[1,]$type == 'text/csv') {
-			df <- read.csv(files[1,]$datapath)
+			df <- utils::read.csv(files[1,]$datapath)
 			rock_sources <- rock::convert_df_to_source(
 				df,
 				oneFile = FALSE,

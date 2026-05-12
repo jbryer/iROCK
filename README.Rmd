@@ -47,7 +47,7 @@ Alternatively, you can deply the iROCK Shiny application using your own projects
 ```{r, eval=FALSE, file='inst/shiny/app.R'}
 ```
 
-You can download the [daacs.csv](data/daacs.csv) file to test the features and to follow the directions below.
+You can download the [daacs.csv](inst/test_data/daacs.csv) file to test the features and to follow the directions below.
 
 
 ![](man/figures/01_New_Project.png)
