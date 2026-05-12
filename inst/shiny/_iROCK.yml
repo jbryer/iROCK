@@ -45,7 +45,7 @@ code_attribute_types:
 aesthetics:
   edges: []
   nodes: []
-aceEditor:
+ace_editor_options:
   theme: 'github'
   fontSize: 12
   wordWrap: FALSE

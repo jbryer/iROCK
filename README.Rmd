@@ -33,7 +33,6 @@ See the [ROCK](https://rock.science) website for more information on the ROCK st
 To install the latest development version, use the following command in R:
 
 ```{r, eval=FALSE}
-remotes::install_github("dreamRs/shinytreeview")
 remotes::install_github('jbryer/iROCK')
 ```
 
@@ -48,6 +47,36 @@ Alternatively, you can deply the iROCK Shiny application using your own projects
 ```{r, eval=FALSE, file='inst/shiny/app.R'}
 ```
 
+You can download the [daacs.csv](data/daacs.csv) file to test the features and to follow the directions below.
+
+
+![](man/figures/01_New_Project.png)
+
+![](man/figures/02_New_Project_2.png)
+
+![](man/figures/03_Project_Details.png)
+
+![](man/figures/04_Upload_Files.png)
+
+![](man/figures/05_Upload_files_options.png)
+
+![](man/figures/06_Coding_View.png)
+
+![](man/figures/07_Codeing_View_2.png)
+
+![](man/figures/08_Coding_View_3.png)
+
+![](man/figures/09_Edit_code.png)
+
+![](man/figures/10_Raw_view.png)
+
+![](man/figures/11_Attributes_View.png)
+
+![](man/figures/12_All_attributes.png)
+
+![](man/figures/13_Analysis_view.png)
+
+![](man/figures/14_Codebook_view.png)
 
 ### Development
 

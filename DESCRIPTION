@@ -24,8 +24,7 @@ Imports:
     DT,
     shinyalert,
     shinyjs,
-    yaml,
-    Rmoji
+    yaml
 Suggests:
     knitr,
     rmarkdown

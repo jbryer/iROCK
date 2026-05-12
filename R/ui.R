@@ -1,9 +1,9 @@
 #' Link to the ROCK project
 #' Internal function.
 link_rock <- shiny::tags$a(
-    "🤘 ROCK",
-    href = "https://rock.science",
-    target = "_blank"
+	"\U1F918", " ROCK",
+	href = "https://rock.science",
+	target = "_blank"
 )
 
 
@@ -97,13 +97,13 @@ iROCK_ui <- function() {
 	                			placeholder = "Select a document in the left menu...",
 	                			debounce = 4000, # How long (in milliseconds) before updates are sent to the server
 	                			readOnly = FALSE,
-	                			theme = aceEditor$theme,
-	                			fontSize = aceEditor$fontSize,
-	                			wordWrap = aceEditor$wordWrap,
-	                			showLineNumbers = aceEditor$showLineNumbers,
-	                			highlightActiveLine = aceEditor$highlightActiveLine,
-	                			showPrintMargin = aceEditor$showPrintMargin,
-	                			height = aceEditor$height
+	                			theme = ace_editor_options$theme,
+	                			fontSize = ace_editor_options$fontSize,
+	                			wordWrap = ace_editor_options$wordWrap,
+	                			showLineNumbers = ace_editor_options$showLineNumbers,
+	                			highlightActiveLine = ace_editor_options$highlightActiveLine,
+	                			showPrintMargin = ace_editor_options$showPrintMargin,
+	                			height = ace_editor_options$height
 	                		)
 	                	),
 	                	shiny::tabPanel(
@@ -180,11 +180,7 @@ iROCK_ui <- function() {
 	    ),
 		shiny::uiOutput('about_tab'),
 		bslib::nav_spacer(),
-		bslib::nav_item(shiny::tags$a(
-			Rmoji::insert_emoji('love_you_gesture'), " ROCK",
-			href = "https://rock.science",
-			target = "_blank"
-		))
+		bslib::nav_item(link_rock)
 	)
 }
 

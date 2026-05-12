@@ -4,16 +4,7 @@
 #' @param options the results of [iROCK::iROCK_options()]
 #' @param ... other parameters passed to [shiny::shinyApp()].
 #' @export
-#' @import shiny rock yaml
-#' @importFrom colourpicker colourInput
-#' @importFrom shinyalert shinyalert
-#' @importFrom shinyTree shinyTree
-#' @importFrom dplyr filter select
-#' @importFrom bslib page_navbar nav_panel layout_sidebar sidebar nav_spacer nav_item navbar_options
-#' @importFrom shinyjs useShinyjs runjs
-#' @importFrom shinyAce aceEditor
-#' @importFrom shinyTree shinyTree get_selected renderTree
-#' @importFrom DT DTOutput renderDT datatable
+#' @import shiny rock
 #' @rdname iROCK
 iROCK <- function(
 	project_dir = getwd(),

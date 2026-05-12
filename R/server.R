@@ -642,14 +642,25 @@ iROCK_server <- function(input, output, session) {
 		ui <- list()
 		rock <- get_rock_file()
 		if(!is.null(rock$attributes[[1]])) {
-			for(i in names(rock$attributes[[1]])) {
-				if(i != 'cid') {
-					ui[[length(ui) + 1]] <- shiny::textInput(
-						inputId = i,
-						label = i,
-						value = rock$attributes[[1]][i],
-						width = '100%'
-					)
+			this_rock <- rock_sources$sourceDf |>
+				dplyr::filter(basename(originalSource) == basename(rock$arguments$originalSource) &
+							  	cid != "no_id")
+			cid <- this_rock$cid[1]
+			attributes <- rock$attributesDf[rock$attributesDf$cid == cid,]
+
+			if(nrow(attributes) > 0) {
+				if(nrow(attributes) > 1) {
+					warning('More than one attribute row found for the current rock file.')
+				}
+				for(i in names(attributes)) {
+					if(i != 'cid') {
+						ui[[length(ui) + 1]] <- shiny::textInput(
+							inputId = i,
+							label = i,
+							value = attributes[1,i], # TODO: this is not correct
+							width = '100%'
+						)
+					}
 				}
 			}
 			ui[[length(ui) + 1]] <- shiny::div(
@@ -695,7 +706,24 @@ iROCK_server <- function(input, output, session) {
 	})
 
 	observeEvent(input$add_new_attribute, {
-# TODO: implement
+		rock <- get_rock_file()
+		rock_sources <- rock::parse_sources(project_dir())
+		# TODO: Is there a better way to find out the currently selected cid
+		# Also: why does a single rock file return attributes for all files.
+		this_rock <- rock_sources$sourceDf |>
+			dplyr::filter(basename(originalSource) == basename(rock$arguments$originalSource) &
+						  	cid != "no_id")
+		cid <- this_rock$cid[1]
+
+# print(paste0("Adding attribute ", input$new_attribute_name, ' = ', input$new_attribute_value, ' to cid = ', cid))
+
+		attributes_file <- file.path(projects_dir, input$project, 'ROCK_attributes.yml')
+		attributes <- yaml::read_yaml(attributes_file)
+		pos <- sapply(attributes[['ROCK_attributes']], FUN = function(x) { x['cid'] == cid}) |> which()
+		attributes[['ROCK_attributes']][[pos]][input$new_attribute_name] <- input$new_attribute_value
+		yaml_str <- paste0('---\n', yaml::as.yaml(attributes), '---')
+		cat(yaml_str, file = attributes_file)
+
 		shiny::removeModal()
 	})
 
