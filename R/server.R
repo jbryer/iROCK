@@ -29,7 +29,6 @@ iROCK_server <- function(input, output, session) {
 		)
 	})
 
-	# TODO: use file.path instead of paste0 to use system path separator
 	project_dir <- shiny::reactive({
 		file.path(projects_location, input$project)
 	})
@@ -221,7 +220,7 @@ iROCK_server <- function(input, output, session) {
 			if(!is.null(input$rock_file)) {
 				rock_file <- shinyTree::get_selected(input$rock_file,
 													 format = "classid")[[1]]
-				rock_file <- paste0(project_dir(), '/', rock_file)
+				rock_file <- file.path(project_dir(), rock_file)
 				if(file.exists(rock_file)) {
 					file.info(rock_file)$mtime[1]
 				} else {
@@ -359,7 +358,8 @@ iROCK_server <- function(input, output, session) {
 		if(files[1,]$type == 'text/plain') {
 			# TODO: if the user uploads a .rock file should probably not processes it.
 			for(i in seq_len(nrow(files))) {
-				out_file <- paste0(project_dir(), '/', tools::file_path_sans_ext(files[i,]$name), '.rock')
+				out_file <- file.path(project_dir(),
+									  paste0(tools::file_path_sans_ext(files[i,]$name), '.rock'))
 				rock::clean_source(
 					input = files[i,]$datapath,
 					output = out_file
@@ -375,16 +375,18 @@ iROCK_server <- function(input, output, session) {
 			rock_sources <- rock::convert_df_to_source(
 				df,
 				oneFile = FALSE,
-				attributesFile = paste0(project_dir(), '/ROCK_attributes.yml'),
+				attributesFile = file.path(project_dir(), 'ROCK_attributes.yml'),
 				cols_to_utterances = input$text_column,
 				cols_to_ciids = c(cid = input$id_column), # TODO: user should select identifier
 				cols_to_attributes = input$attribute_column
 			)
 			for(i in seq_len(length(rock_sources))) {
-				out_file <- paste0(project_dir(), '/',
-								   tools::file_path_sans_ext(files[1,]$name), '-',
-								   df[i,input$id_column,drop=TRUE],
-								   '.rock')
+				out_file <- file.path(
+					project_dir(),
+					paste0(tools::file_path_sans_ext(files[1,]$name), '-',
+						   df[i,input$id_column,drop=TRUE],
+						   '.rock')
+				)
 				cat(
 					rock_sources[[i]],
 					file = out_file,
@@ -437,7 +439,7 @@ iROCK_server <- function(input, output, session) {
 				# Add code to codebook
 				if(!input$new_code %in% codebook_codes()) {
 					add_code_to_codebook(
-						codebook_file = paste0(project_dir(), '/ROCK_codebook.yml'),
+						codebook_file = file.path(project_dir(), 'ROCK_codebook.yml'),
 						code = input$new_code)
 				}
 			}

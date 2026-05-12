@@ -46,10 +46,10 @@ aesthetics:
   edges: []
   nodes: []
 ace_editor_options:
-  theme: 'github'
+  theme: github
   fontSize: 12
-  wordWrap: FALSE
-  showLineNumbers: TRUE
-  highlightActiveLine: TRUE
-  showPrintMargin: TRUE
-  height: '600px'
+  wordWrap: no
+  showLineNumbers: yes
+  highlightActiveLine: yes
+  showPrintMargin: yes
+  height: 600px

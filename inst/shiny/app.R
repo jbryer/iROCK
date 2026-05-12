@@ -2,7 +2,7 @@ library(iROCK)
 library(shiny)
 
 # Where should projects be save
-projects_dir <- file.path(getwd(), 'projects')
+projects_dir <- getwd()
 
 ##### DO NOT CHANGE BELOW ######################################################
 ui <- server <- NULL

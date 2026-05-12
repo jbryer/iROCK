@@ -1,8 +1,7 @@
 #' Run the iROCK Shiny application
 #'
 #' @param app_dir directory where to run the iROCK Shiny application.
-#' @param projects_dir directory where ROCK project files are located. The default is the `project`
-#'        subdirectory to `app_dir`.
+#' @param projects_dir directory where ROCK projects are located.
 #' @param options the results of [iROCK::iROCK_options()]
 #' @param ... other parameters passed to [shiny::shinyApp()].
 #' @export
@@ -10,7 +9,7 @@
 #' @rdname iROCK
 iROCK <- function(
 	app_dir = getwd(),
-	projects_dir = file.path(app_dir, 'projects'),
+	projects_dir = app_dir,
 	options = iROCK_options(app_dir),
 	...
 ) {
