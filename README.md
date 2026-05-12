@@ -6,10 +6,12 @@
 <!-- badges: start -->
 
 [![](https://www.r-pkg.org/badges/version/iROCK?color=orange)](https://cran.r-project.org/package=iROCK)
-[![](https://img.shields.io/badge/devel%20version-0.2.0-blue.svg)](https://github.com/jbryer/iROCK)
+[![](https://img.shields.io/badge/devel%20version-0.3.0-blue.svg)](https://github.com/jbryer/iROCK)
 [![Project Status: Active - The project has reached a stable, usable
 state and is being actively
 developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![R build
+status](https://github.com/jbryer/iROCK/workflows/R-CMD-check/badge.svg)](https://github.com/jbryer/iROCK/actions)
 <!-- badges: end -->
 
 See the [ROCK](https://rock.science) website for more information on the
