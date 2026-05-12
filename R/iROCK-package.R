@@ -1,7 +1,8 @@
 #' Run the iROCK Shiny application
 #'
 #' @param app_dir directory where to run the iROCK Shiny application.
-#' @param projects_dir directory where ROCK projects are located.
+#' @param projects_dir directory where ROCK projects are located. By default,
+#'        it is the same as `app_dir`. Each ROCK project will be a subdirectory.
 #' @param options the results of [iROCK::iROCK_options()]
 #' @param ... other parameters passed to [shiny::shinyApp()].
 #' @export

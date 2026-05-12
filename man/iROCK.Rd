@@ -10,7 +10,7 @@
 \usage{
 iROCK(
   app_dir = getwd(),
-  projects_dir = file.path(app_dir, "projects"),
+  projects_dir = app_dir,
   options = iROCK_options(app_dir),
   ...
 )
@@ -26,8 +26,8 @@ iROCK_ui()
 that directory then the values from that file will be returned, otherwise the default
 parameters will be returned.}
 
-\item{projects_dir}{directory where ROCK project files are located. The default is the \code{project}
-subdirectory to \code{app_dir}.}
+\item{projects_dir}{directory where ROCK projects are located. By default,
+it is the same as \code{app_dir}. Each ROCK project will be a subdirectory.}
 
 \item{options}{the results of \code{\link[=iROCK_options]{iROCK_options()}}}
 

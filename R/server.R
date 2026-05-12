@@ -65,6 +65,7 @@ iROCK_server <- function(input, output, session) {
 	)
 
 	##### Project management ###################################################
+	# Create new project modal (get user input)
 	shiny::observeEvent(input$new_project, {
 		shiny::showModal(
 			shiny::modalDialog(
@@ -84,6 +85,72 @@ iROCK_server <- function(input, output, session) {
 		)
 	})
 
+	# Create new project
+	shiny::observeEvent(input$create_new_project, {
+		# TODO: Should make sure the name is good
+		new_dir <- file.path(projects_location, input$new_project_dir)
+		dir.create(path = new_dir, recursive = TRUE)
+		template_dir <- file.path(find.package('iROCK'), 'template')
+		if(!dir.exists(template_dir)) {
+			template_dir <- file.path(find.package('iROCK'), 'inst', 'template')
+			if(!dir.exists(template_dir)) {
+				stop('Could not find template directory!')
+			}
+		}
+		for(i in list.files(template_dir)) {
+			file.copy(from = file.path(template_dir, i),
+					  to = file.path(projects_location, input$new_project_dir, i))
+		}
+		shiny::updateSelectInput(
+			session = session,
+			inputId = 'project',
+			choices = list.dirs(path = projects_location, recursive = FALSE, full.names = FALSE),
+			selected = input$new_project_dir
+		)
+		shiny::removeModal()
+	})
+
+	# Render project porperties
+	output$project_properties <- shiny::renderUI({
+		project <- get_project_options()
+		ui <- list()
+		if(is.null(project)) {
+# TODO: Create new default project file
+			warning('No _ROCKproject.yml found!')
+		} else {
+			fields <- project[['_ROCKproject']][['project']]
+			for(i in names(fields)) {
+				ui[[length(ui) + 1]] <- shiny::textInput(
+					inputId = paste0('rock_options_', i),
+					label = i,
+					value = fields[[i]],
+					width = '100%'
+				)
+			}
+			ui[[length(ui) + 1]] <- shiny::actionButton(
+				inputId = 'save_project_options',
+				label = 'Save',
+				icon = icon('save')
+			)
+		}
+
+		do.call(shiny::div, ui)
+	})
+
+	# Save updates to project options
+	observeEvent(input$save_project_options, {
+		project <- get_project_options()
+		fields <- project[['_ROCKproject']][['project']]
+		for(i in names(fields)) {
+			project[['_ROCKproject']][['project']][[i]] <- input[[paste0('rock_options_', i)]]
+		}
+		yaml::write_yaml(
+			project,
+			file = project_options_file()
+		)
+	})
+
+	# Delete project
 	shiny::observeEvent(input$delete_project, {
 		shinyalert::shinyalert(
 			title = 'Confirm Project Deletion',
@@ -110,69 +177,8 @@ iROCK_server <- function(input, output, session) {
 		)
 	})
 
-	shiny::observeEvent(input$create_new_project, {
-		# TODO: Should make sure the name is good
-		new_dir <- file.path(projects_location, input$new_project_dir)
-		dir.create(path = new_dir, recursive = TRUE)
-		template_dir <- file.path(find.package('iROCK'), 'template')
-		if(!dir.exists(template_dir)) {
-			template_dir <- file.path(find.package('iROCK'), 'inst', 'template')
-			if(!dir.exists(template_dir)) {
-				stop('Could not find template directory!')
-			}
-		}
-		for(i in list.files(template_dir)) {
-			file.copy(from = file.path(template_dir, i),
-					  to = file.path(projects_location, input$new_project_dir, i))
-		}
-		shiny::updateSelectInput(
-			session = session,
-			inputId = 'project',
-			choices = list.dirs(path = projects_location, recursive = FALSE, full.names = FALSE),
-			selected = input$new_project_dir
-		)
-		shiny::removeModal()
-	})
-
-	output$project_properties <- shiny::renderUI({
-		project <- get_project_options()
-		ui <- list()
-		if(is.null(project)) {
-			# TODO: Create new default project file
-			# stop('No _ROCKproject.yml found!')
-		} else {
-			fields <- project[['_ROCKproject']][['project']]
-			for(i in names(fields)) {
-				ui[[length(ui) + 1]] <- shiny::textInput(
-					inputId = paste0('rock_options_', i),
-					label = i,
-					value = fields[[i]],
-					width = '100%'
-				)
-			}
-			ui[[length(ui) + 1]] <- shiny::actionButton(
-				inputId = 'save_project_options',
-				label = 'Save',
-				icon = icon('save')
-			)
-		}
-
-		do.call(shiny::div, ui)
-	})
-
-	observeEvent(input$save_project_options, {
-		project <- get_project_options()
-		fields <- project[['_ROCKproject']][['project']]
-		for(i in names(fields)) {
-			project[['_ROCKproject']][['project']][[i]] <- input[[paste0('rock_options_', i)]]
-		}
-		yaml::write_yaml(
-			project,
-			file = project_options_file()
-		)
-	})
-
 	##### Codebook #############################################################
+	# Return vector of all defined codes
 	codebook_codes <- shiny::reactive({
 		codebook <- get_codebook_file()
 		codes <- c()
@@ -186,6 +192,7 @@ iROCK_server <- function(input, output, session) {
 		return(codes)
 	})
 
+	# Return the codebook as an YAML object
 	get_codebook_file <- shiny::reactivePoll(
 		intervalMillis = 500,
 		session = session,
@@ -282,6 +289,7 @@ iROCK_server <- function(input, output, session) {
 		)
 	})
 
+	# UI to upload file(s)
 	output$file_upload_modal <- shiny::renderUI({
 		ui <- list()
 		files <- input$upload_files
@@ -353,6 +361,7 @@ iROCK_server <- function(input, output, session) {
 		do.call(tagList, ui)
 	})
 
+	# Process the uploaded file
 	shiny::observeEvent(input$save, {
 		files <- input$upload_files
 		if(files[1,]$type == 'text/plain') {
@@ -399,6 +408,7 @@ iROCK_server <- function(input, output, session) {
 	})
 
 	##### Code Editing #########################################################
+	# Code entering UI element
 	output$code_input <- shiny::renderUI({
 		shiny::selectizeInput(
 			inputId = 'new_code',
@@ -412,17 +422,22 @@ iROCK_server <- function(input, output, session) {
 	})
 
 	# TODO: add this as a package function
+	# Add a code to the codebook
+	# @param codebook_file path to the ROCK_codebook.yml file.
+	# @param code the new code to add to the codebook.
 	add_code_to_codebook <- function(codebook_file, code) {
 		params <- list(
 			id = code,
 			yaml_file = codebook_file
 		)
+		# Note that code_attributes is defined in _iROCK.yml and/or iROCK_options()
 		for(i in code_attributes) {
 			params[[i]] <- ''
 		}
 		do.call(new_code, params)
 	}
 
+	# Add the code to an utterance
 	shiny::observeEvent(input$new_code, {
 		if(input$new_code != '') {
 			code_pattern <- "^[A-Za-z][A-Za-z0-9_]+$"
@@ -525,6 +540,7 @@ iROCK_server <- function(input, output, session) {
 		}
 	})
 
+	# Modal dialog to edit a code
 	edit_code_modal <- function() {
 		selected_code <- current_code_edit()
 		codebook <- get_codebook_file()
@@ -593,11 +609,13 @@ iROCK_server <- function(input, output, session) {
 		)
 	}
 
+	# Close the edit code modal
 	shiny::observeEvent(input$cancel_code_edit, {
 		current_code_edit(NULL)
 		shiny::removeModal()
 	})
 
+	# Save changes to the code vis-à-vis the modal dialog
 	shiny::observeEvent(input$save_code_edit, {
 		codebook <- get_codebook_file()
 		selected_code <- current_code_edit()
@@ -685,6 +703,7 @@ iROCK_server <- function(input, output, session) {
 		do.call(shiny::div, ui)
 	})
 
+	# Modal dialog to add a new attribute (will create new column)
 	shiny::observeEvent(input$new_attribute, {
 		shiny::showModal(
 			shiny::modalDialog(
@@ -709,17 +728,16 @@ iROCK_server <- function(input, output, session) {
 		)
 	})
 
+	# Add new attribute to ROCK_attributes.yml file
 	observeEvent(input$add_new_attribute, {
 		rock <- get_rock_file()
 		rock_sources <- rock::parse_sources(project_dir())
-		# TODO: Is there a better way to find out the currently selected cid
-		# Also: why does a single rock file return attributes for all files.
+# TODO: Is there a better way to find out the currently selected cid
+# Also: why does a single rock file return attributes for all files?
 		this_rock <- rock_sources$sourceDf |>
 			dplyr::filter(basename(originalSource) == basename(rock$arguments$originalSource) &
 						  	cid != "no_id")
 		cid <- this_rock$cid[1]
-
-# print(paste0("Adding attribute ", input$new_attribute_name, ' = ', input$new_attribute_value, ' to cid = ', cid))
 
 		attributes_file <- file.path(projects_dir, input$project, 'ROCK_attributes.yml')
 		attributes <- yaml::read_yaml(attributes_file)
@@ -733,7 +751,7 @@ iROCK_server <- function(input, output, session) {
 
 	shiny::observeEvent(input$update_attributes, {
 print('Updating attributes...')
-		# TODO: actually save
+# TODO: actually save
 
 	})
 
@@ -797,6 +815,10 @@ print('Updating attributes...')
 			} else if(length(utterance_codes) == 0) {
 				utterance_codes <- ''
 			} else {
+				# TODO: Update so that the codes are color coded in the document view.
+				# This is not currently working. It causes utterance selections
+				# to not work. Best guess is that the nested div tags is causing
+				# JavaScript events to not be tiggered
 				# ids <- sapply(codebook[['ROCK_codebook']][['codes']], FUN = function(x) { x[['id']] })
 				# # utterance_codes %in% ids
 				# code_pos <- sapply(utterance_codes, FUN = function(x) {
@@ -903,6 +925,7 @@ print('Updating attributes...')
 		}
 	})
 
+	# Update the Ace editor when the rock file changes
 	shiny::observeEvent(input$rock_file, {
 		req(input$rock_file)
 		rock_file <- shinyTree::get_selected(input$rock_file,
@@ -928,6 +951,7 @@ print('Updating attributes...')
 			rock_file_raw <- scan(file = rock_file, what = character()) |>
 				paste0(collapse = '\n')
 			if(rock_file_raw != input$document_view_raw_ace)
+# TODO: It appears that the Ace editor is causing the file to update when it hasn't actually changed
 print(paste0('Updating ', rock_file, ' from raw editor...'))
 			cat(input$document_view_raw_ace, file = rock_file)
 		}
@@ -948,6 +972,7 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 		return(nodes)
 	})
 
+	# Button to delete the selected rock file
 	output$delete_selected_file <- shiny::renderUI({
 		req(input$rock_file)
 		rock_file <- shinyTree::get_selected(input$rock_file, format = "classid")[[1]]
@@ -960,6 +985,7 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 		}
 	})
 
+	# Delete a rock file
 	shiny::observeEvent(input$delete_file, {
 		shinyalert::shinyalert(
 			title = 'Confirm file deletion',
@@ -978,6 +1004,8 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 		)
 	})
 
+	# TODO: Decide if we want to allow the user to delete all files. I suspect
+	# deleting the project would be a better approach.
 	# shiny::observeEvent(input$delete_all_files, {
 	# 	shinyalert::shinyalert(
 	# 		title = 'Confirm file deletion',
@@ -1013,7 +1041,7 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 	shiny::observeEvent(input$attributes_table_cell_edit, {
 		row  <- input$attributes_table_cell_edit$row
 		col <- input$attributes_table_cell_edit$col
-		# TODO: save changes
+# TODO: save changes
 print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_cell_edit$value))
 		# rv$data[row, col] <- input$attributes_table_cell_edit$value
 	})
@@ -1034,6 +1062,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		return(tree)
 	})
 
+	# Retner UI elements for all the codebook options
 	output$codebook_values <- shiny::renderUI({
 		req(input$codebook_tree)
 
@@ -1041,7 +1070,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		id <- shinyTree::get_selected(input$codebook_tree, format = "classid")[[1]]
 		ui[[1]] <- p(paste0('Code ID: ', id))
 
-		yml <- yaml::read_yaml(paste0(project_dir(), '/ROCK_codebook.yml'))
+		yml <- yaml::read_yaml(file.path(project_dir(), 'ROCK_codebook.yml'))
 		codebook <- yml[['ROCK_codebook']]
 		codes <- codebook[['codes']]
 		selected_code <- sapply(codes, FUN = function(x) { x['id'] == id})
@@ -1074,6 +1103,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		do.call(div, ui)
 	})
 
+	# Save changes to the codebook
 	shiny::observeEvent(input$save_code_edits, {
 		id <- shinyTree::get_selected(input$codebook_tree, format = "classid")[[1]]
 		params <- list(
@@ -1101,6 +1131,8 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		do.call(update_code, params)
 	})
 
+	# Utility function that returns the Shiny input element defined by
+	# the code_attributes and code_attribute_types in _iROCK.yml
 	get_input_type <- function(x) {
 		FUN <- shiny::textInput
 		if(x %in% names(code_attribute_types)) {
@@ -1116,6 +1148,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		return(FUN)
 	}
 
+	# UI elements to add a new code
 	output$new_code_ui <- shiny::renderUI({
 		ui <- list()
 		ui[[length(ui) + 1]] <- shiny::textInput(
@@ -1133,9 +1166,10 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		do.call(div, ui)
 	})
 
+	# Add new code to the codebook
 	shiny::observeEvent(input$add_new_code, {
 		params <- list(
-			yaml_file = paste0(project_dir(), '/ROCK_codebook.yml'),
+			yaml_file = file.path(project_dir(), 'ROCK_codebook.yml'),
 			id = input$new_id
 		)
 		for(i in code_attributes) {
@@ -1145,6 +1179,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		shiny::removeModal()
 	})
 
+	# Modal dialog for adding a new code
 	shiny::observeEvent(input$new_code_modal, {
 		shiny::showModal(
 			shiny::modalDialog(
@@ -1160,9 +1195,10 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		)
 	})
 
+	# Raw view (Ace editor) of the codebook
 	output$codebook_yaml <- shiny::renderUI({
 		# TODO: check that file exists
-		codebook_file <- paste0(project_dir(), '/ROCK_codebook.yml')
+		codebook_file <- file.path(project_dir(), 'ROCK_codebook.yml')
 		if(file.exists(codebook_file)) {
 			# yml <- yaml::read_yaml(codebook_file)
 			yml_raw <- scan(file = codebook_file, what = character(), sep = '\n') |>
@@ -1178,6 +1214,7 @@ print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_ce
 		}
 	})
 
+	# UI elements for code details
 	output$code_details <- shiny::renderUI({
 		code <- input$codebook_code
 		ui <- list()
