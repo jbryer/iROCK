@@ -1,5 +1,8 @@
 #' Configuration options for the iROCK Shiny application.
 #'
+#' @param app_dir directory where the Shiny app is located. If the `_iROCK.yml` file exists in
+#'         that directory then the values from that file will be returned, otherwise the default
+#'         parameters will be returned.
 #' @return a list object with configurable options for the iROCK Shiny application, including:
 #' \describe{
 #'   \item{fixed_style}{}
@@ -8,8 +11,9 @@
 #' }
 #' @rdname iROCK
 #' @export
-iROCK_options <- function() {
-	list(
+iROCK_options <- function(app_dir) {
+	# These are the default options
+	irock_options <- list(
 		fixed_style = 'font-family: monospace; font-size: 12px;',
 
 		color_palette = c(
@@ -40,6 +44,28 @@ iROCK_options <- function() {
 			nodes = list(
 
 			)
+		),
+
+		ace_editor_options = list(
+			theme = 'github',
+			fontSize = 12,
+			wordWrap = FALSE,
+			showLineNumbers = TRUE,
+			highlightActiveLine = TRUE,
+			showPrintMargin = TRUE,
+			height = '600px'
 		)
 	)
+
+	options_file <- file.path(app_dir, '_iROCK.yml')
+	if(file.exists(options_file)) {
+		options <- yaml::read_yaml(options_file)
+		for(i in names(options)) {
+			irock_options[[i]] <- options[[i]]
+		}
+	} else {
+		warning(paste0('_iROCK.yml not found in ', app_dir, '. Using default values.'))
+	}
+
+	return(irock_options)
 }

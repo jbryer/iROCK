@@ -8,16 +8,26 @@
 \alias{iROCK_ui}
 \title{Run the iROCK Shiny application}
 \usage{
-iROCK(project_dir = getwd(), options = iROCK_options(), ...)
+iROCK(
+  app_dir = getwd(),
+  project_dir = file.path(app_dir, "projects"),
+  options = iROCK_options(app_dir),
+  ...
+)
 
 iROCK_server(input, output, session)
 
-iROCK_options()
+iROCK_options(app_dir)
 
 iROCK_ui()
 }
 \arguments{
-\item{project_dir}{directory where ROCK project files are located.}
+\item{app_dir}{directory where the Shiny app is located. If the \verb{_iROCK.yml} file exists in
+that directory then the values from that file will be returned, otherwise the default
+parameters will be returned.}
+
+\item{project_dir}{directory where ROCK project files are located. The default is the \code{project}
+subdirectory to \code{app_dir}.}
 
 \item{options}{the results of \code{\link[=iROCK_options]{iROCK_options()}}}
 
