@@ -105,11 +105,11 @@ iROCK_ui <- function() {
 	                			showPrintMargin = ace_editor_options$showPrintMargin,
 	                			height = ace_editor_options$height
 	                		)
-	                	),
-	                	shiny::tabPanel(
-	                		title = 'Attributes',
-	                		shiny::uiOutput('selected_attribues')
 	                	)
+	                	# shiny::tabPanel(
+	                	# 	title = 'Attributes',
+	                	# 	shiny::uiOutput('selected_attribues')
+	                	# )
 	                ),
 	                border = TRUE
 	            ),

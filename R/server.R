@@ -660,100 +660,101 @@ iROCK_server <- function(input, output, session) {
 	})
 
 	##### Attributes ###########################################################
-	output$selected_attribues <- shiny::renderUI({
-		ui <- list()
-		rock <- get_rock_file()
-		if(!is.null(rock$attributes[[1]])) {
-			this_rock <- rock_sources$sourceDf |>
-				dplyr::filter(basename(originalSource) == basename(rock$arguments$originalSource) &
-							  	cid != "no_id")
-			cid <- this_rock$cid[1]
-			attributes <- rock$attributesDf[rock$attributesDf$cid == cid,]
-
-			if(nrow(attributes) > 0) {
-				if(nrow(attributes) > 1) {
-					warning('More than one attribute row found for the current rock file.')
-				}
-				for(i in names(attributes)) {
-					if(i != 'cid') {
-						ui[[length(ui) + 1]] <- shiny::textInput(
-							inputId = i,
-							label = i,
-							value = attributes[1,i], # TODO: this is not correct
-							width = '100%'
-						)
-					}
-				}
-			}
-			ui[[length(ui) + 1]] <- shiny::div(
-				shiny::actionButton(
-					inputId = 'update_attributes',
-					label = 'Update',
-					icon = shiny::icon('floppy-disk')
-				),
-				shiny::actionButton(
-					inputId = 'new_attribute',
-					label = 'New Attribute',
-					icon = shiny::icon('square-plus')
-				)
-			)
-		} else {
-			ui <- shiny::div('None')
-		}
-		do.call(shiny::div, ui)
-	})
-
-	# Modal dialog to add a new attribute (will create new column)
-	shiny::observeEvent(input$new_attribute, {
-		shiny::showModal(
-			shiny::modalDialog(
-				shiny::div('Add new attribute:'),
-				shiny::textInput(
-					inputId = 'new_attribute_name',
-					label = 'Name',
-					value = '',
-					width = '100%'
-				),
-				shiny::textInput(
-					inputId = 'new_attribute_value',
-					label = 'Value',
-					value = '',
-					width = '100%'
-				),
-				footer = shiny::tagList(
-					shiny::modalButton('Cancel'),
-					shiny::actionButton('add_new_attribute', 'Save')
-				)
-			)
-		)
-	})
-
-	# Add new attribute to ROCK_attributes.yml file
-	observeEvent(input$add_new_attribute, {
-		rock <- get_rock_file()
-		rock_sources <- rock::parse_sources(project_dir())
-# TODO: Is there a better way to find out the currently selected cid
-# Also: why does a single rock file return attributes for all files?
-		this_rock <- rock_sources$sourceDf |>
-			dplyr::filter(basename(originalSource) == basename(rock$arguments$originalSource) &
-						  	cid != "no_id")
-		cid <- this_rock$cid[1]
-
-		attributes_file <- file.path(projects_dir, input$project, 'ROCK_attributes.yml')
-		attributes <- yaml::read_yaml(attributes_file)
-		pos <- sapply(attributes[['ROCK_attributes']], FUN = function(x) { x['cid'] == cid}) |> which()
-		attributes[['ROCK_attributes']][[pos]][input$new_attribute_name] <- input$new_attribute_value
-		yaml_str <- paste0('---\n', yaml::as.yaml(attributes), '---')
-		cat(yaml_str, file = attributes_file)
-
-		shiny::removeModal()
-	})
-
-	shiny::observeEvent(input$update_attributes, {
-print('Updating attributes...')
-# TODO: actually save
-
-	})
+# 	output$selected_attribues <- shiny::renderUI({
+# 		ui <- list()
+# 		rock <- get_rock_file()
+# 		if(!is.null(rock$attributes[[1]])) {
+# 			this_rock <- rock_sources$sourceDf |>
+# 				dplyr::filter(basename(originalSource) == basename(rock$arguments$originalSource) &
+# 							  	cid != "no_id")
+# 			cid <- this_rock$cid[1]
+# 			attributes <- rock$attributesDf[rock$attributesDf$cid == cid,]
+#
+# 			if(nrow(attributes) > 0) {
+# 				if(nrow(attributes) > 1) {
+# 					warning('More than one attribute row found for the current rock file.')
+# 				}
+# 				for(i in names(attributes)) {
+# 					if(i != 'cid') {
+# 						ui[[length(ui) + 1]] <- shiny::textInput(
+# 							inputId = i,
+# 							label = i,
+# 							value = attributes[1,i], # TODO: this is not correct
+# 							width = '100%'
+# 						)
+# 					}
+# 				}
+# 			}
+# 			ui[[length(ui) + 1]] <- shiny::div(
+# 				shiny::actionButton(
+# 					inputId = 'update_attributes',
+# 					label = 'Update',
+# 					icon = shiny::icon('floppy-disk')
+# 				),
+# 				shiny::actionButton(
+# 					inputId = 'new_attribute',
+# 					label = 'New Attribute',
+# 					icon = shiny::icon('square-plus')
+# 				)
+# 			)
+# 		} else {
+# 			ui <- shiny::div('None')
+# 		}
+# 		do.call(shiny::div, ui)
+# 	})
+#
+# 	# Modal dialog to add a new attribute (will create new column)
+# 	shiny::observeEvent(input$new_attribute, {
+# 		shiny::showModal(
+# 			shiny::modalDialog(
+# 				shiny::div('Add new attribute:'),
+# 				shiny::textInput(
+# 					inputId = 'new_attribute_name',
+# 					label = 'Name',
+# 					value = '',
+# 					width = '100%'
+# 				),
+# 				shiny::textInput(
+# 					inputId = 'new_attribute_value',
+# 					label = 'Value',
+# 					value = '',
+# 					width = '100%'
+# 				),
+# 				footer = shiny::tagList(
+# 					shiny::modalButton('Cancel'),
+# 					shiny::actionButton('add_new_attribute', 'Save')
+# 				)
+# 			)
+# 		)
+# 	})
+#
+# 	# Add new attribute to ROCK_attributes.yml file
+# 	observeEvent(input$add_new_attribute, {
+# 		rock <- get_rock_file()
+# 		rock_sources <- rock::parse_sources(project_dir())
+# # TODO: Is there a better way to find out the currently selected cid
+# # Also: why does a single rock file return attributes for all files?
+# # Use rock::get_all_classInstanceIds()
+# 		this_rock <- rock_sources$sourceDf |>
+# 			dplyr::filter(basename(originalSource) == basename(rock$arguments$originalSource) &
+# 						  	cid != "no_id")
+# 		cid <- this_rock$cid[1]
+#
+# 		attributes_file <- file.path(projects_dir, input$project, 'ROCK_attributes.yml')
+# 		attributes <- yaml::read_yaml(attributes_file)
+# 		pos <- sapply(attributes[['ROCK_attributes']], FUN = function(x) { x['cid'] == cid}) |> which()
+# 		attributes[['ROCK_attributes']][[pos]][input$new_attribute_name] <- input$new_attribute_value
+# 		yaml_str <- paste0('---\n', yaml::as.yaml(attributes), '---')
+# 		cat(yaml_str, file = attributes_file)
+#
+# 		shiny::removeModal()
+# 	})
+#
+# 	shiny::observeEvent(input$update_attributes, {
+# print('Updating attributes...')
+# # TODO: actually save
+#
+# 	})
 
 	# Raw view of the ROCK file
 	output$document_view_raw <- shiny::renderText({
@@ -1026,10 +1027,12 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 
 	##### Attributes Tables ####################################################
 	output$attributes_table <- DT::renderDT({
+		# TODO: Make this a reactive function
 		yaml_files = c('ROCK_aesthetics.yml', 'ROCK_attributes.yml', 'ROCK_codebook.yml')
 		yaml_files <- file.path(project_dir(), yaml_files)
 		rock_files <- rock::parse_sources(path = project_dir(), filesWithYAML = yaml_files)
-		DT::datatable(rock_files$attributesDf,
+		attributes <- rock_files$attributesDf[!duplicated(rock_files$attributesDf),]
+		DT::datatable(attributes,
 					  editable = TRUE,
 					  selection = 'single'
 					  # options = list(
@@ -1041,9 +1044,15 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 	shiny::observeEvent(input$attributes_table_cell_edit, {
 		row  <- input$attributes_table_cell_edit$row
 		col <- input$attributes_table_cell_edit$col
-# TODO: save changes
-print(paste0('Changing cell ', row, ', ', col, ' to ', input$attributes_table_cell_edit$value))
-		# rv$data[row, col] <- input$attributes_table_cell_edit$value
+		value <- input$attributes_table_cell_edit$value
+
+		# print(paste0('Changing cell ', row, ', ', col, ' to ', value))
+
+		attr_file <- file.path(project_dir(), 'ROCK_attributes.yml')
+		attr_yaml <- yaml::read_yaml(attr_file)
+		attr_yaml$ROCK_attributes[[row]]
+		attr_yaml$ROCK_attributes[[row]][[var_name]] <- value
+		cat(paste0('---\n', yaml::as.yaml(attr_yaml), '---\n'), file = attr_file)
 	})
 
 	##### Codebook #############################################################
