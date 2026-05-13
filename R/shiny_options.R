@@ -21,6 +21,7 @@ utils::globalVariables(c('fixed_style','color_palette','utterance_highlight_colo
 iROCK_options <- function(app_dir) {
 	# These are the default options
 	irock_options <- list(
+		# fixed_style: 'font-family: monospace; font-size: 12px; white-space: nowrap;'
 		fixed_style = 'font-family: monospace; font-size: 12px;',
 
 		color_palette = c(

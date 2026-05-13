@@ -1,4 +1,4 @@
-fixed_style: 'font-family: monospace; font-size: 12px;'
+fixed_style: 'font-family: monospace; font-size: 12px; white-space: nowrap;'
 color_palette:
 - '#89C5DA'
 - '#DA5724'
