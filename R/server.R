@@ -1027,7 +1027,7 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 
 	##### Attributes Tables ####################################################
 	output$attributes_table <- DT::renderDT({
-		# TODO: Make this a reactive function
+		# TODO: Getting attributes should be a reactive function
 		yaml_files = c('ROCK_aesthetics.yml', 'ROCK_attributes.yml', 'ROCK_codebook.yml')
 		yaml_files <- file.path(project_dir(), yaml_files)
 		rock_files <- rock::parse_sources(path = project_dir(), filesWithYAML = yaml_files)
@@ -1045,6 +1045,15 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 		row  <- input$attributes_table_cell_edit$row
 		col <- input$attributes_table_cell_edit$col
 		value <- input$attributes_table_cell_edit$value
+
+		# TODO: See note above
+		project_dir <- file.path(projects_dir, input$project)
+		yaml_files = c('ROCK_aesthetics.yml', 'ROCK_attributes.yml', 'ROCK_codebook.yml')
+		yaml_files <- file.path(project_dir, yaml_files)
+		rock_files <- rock::parse_sources(path = project_dir, filesWithYAML = yaml_files)
+		nrow(rock_files$attributesDf) # Should be 17
+		attributes <- rock_files$attributesDf[!duplicated(rock_files$attributesDf),]
+		var_name <- names(attributes)[col]
 
 		# print(paste0('Changing cell ', row, ', ', col, ' to ', value))
 
