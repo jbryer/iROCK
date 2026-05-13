@@ -29,7 +29,7 @@ iROCK_options <- function(app_dir) {
 			"#D14285", "#6DDE88", "#652926", "#7FDCC0", "#C84248", "#8569D5", "#5E738F", "#D1A33D",
 			"#8A7C64", "#599861"),
 
-		utterance_highlight_color = 'yellow',
+		utterance_highlight_color = '#efefef',
 
 		# Default attributes for every new code.
 		code_attributes = c('label', 'description', 'instruction',
