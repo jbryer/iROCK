@@ -444,7 +444,7 @@ iROCK_server <- function(input, output, session) {
 			if(!grepl(code_pattern, input$new_code)) {
 				shinyalert::shinyalert(
 					title = 'Invalid code',
-					text = 'Invalid code. Codes can only contain alpha numeric characters and beging with a letter.'
+					text = 'Invalid code. Codes can only contain alpha numeric characters and must begin with a letter.'
 				)
 			} else {
 				update_utterance(
