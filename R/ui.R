@@ -120,6 +120,30 @@ iROCK_ui <- function() {
 	    ),
 	    bslib::nav_panel(
 	        title = "Attributes",
+	        shiny::fluidRow(
+	        	shiny::column(
+	        		width = 4,
+	        		shiny::uiOutput('attributes_table_selection')
+	        	),
+	        	shiny::column(
+	        		width = 4,
+	        		shiny::actionButton(
+	        			inputId = 'attribute_new_cid_button',
+	        			label = 'New Class Instance (cid)',
+	        			icon = shiny::icon('square-plus'),
+	        			style = 'margin-top: 25px;'
+	        		)
+	        	),
+	        	shiny::column(
+	        		width = 4,
+	        		# shiny::actionButton(
+	        		# 	inputId = 'attribute_new_column_button',
+	        		# 	label = 'New Column',
+	        		# 	icon = shiny::icon('table-columns'),
+	        		# 	style = 'margin-top: 25px;'
+	        		# )
+	        	)
+	        ),
 	        DT::DTOutput('attributes_table')
 	    ),
 	    bslib::nav_panel(

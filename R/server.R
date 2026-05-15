@@ -8,6 +8,8 @@ utils::globalVariables(c('projects_location', 'uids', 'projects_dir', 'originalS
 #' @export
 #' @rdname iROCK
 iROCK_server <- function(input, output, session) {
+	code_pattern <- "^[A-Za-z][A-Za-z0-9_]+$"
+
 	selected_utterance <- shiny::reactiveValues(
 		uid = NULL,
 		rendered = FALSE
@@ -440,7 +442,6 @@ iROCK_server <- function(input, output, session) {
 	# Add the code to an utterance
 	shiny::observeEvent(input$new_code, {
 		if(input$new_code != '') {
-			code_pattern <- "^[A-Za-z][A-Za-z0-9_]+$"
 			if(!grepl(code_pattern, input$new_code)) {
 				shinyalert::shinyalert(
 					title = 'Invalid code',
@@ -1027,41 +1028,166 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 
 	##### Attributes Tables ####################################################
 	output$attributes_table <- DT::renderDT({
-		# TODO: Getting attributes should be a reactive function
-		yaml_files = c('ROCK_aesthetics.yml', 'ROCK_attributes.yml', 'ROCK_codebook.yml')
-		yaml_files <- file.path(project_dir(), yaml_files)
-		rock_files <- rock::parse_sources(path = project_dir(), filesWithYAML = yaml_files)
-		attributes <- rock_files$attributesDf[!duplicated(rock_files$attributesDf),]
-		DT::datatable(attributes,
-					  editable = TRUE,
-					  selection = 'single'
-					  # options = list(
-					  #
-					  # )
+		DT::datatable(
+			data = get_attributes_table(),
+			editable = TRUE,
+			selection = 'single'
+			# options = list(
+			#
+		    # )
 		)
 	})
 
+	# Return all ROCK_attributes files as YAML objects
+	get_attribute_yamls <- shiny::reactive({
+		attr_files <- get_attribute_files()
+		attr_yamls <- lapply(
+			attr_files,
+			FUN = function(x) {
+				yaml::read_yaml(x)
+			}
+		)
+		return(attr_yamls)
+	})
+
+	get_attribute_files <- reactivePoll(
+		intervalMillis = 500,
+		session = session,
+		checkFunc = function() {
+			list.files(
+				path = file.path(project_dir()),
+				pattern = 'ROCK_attributes*',
+				full.names = TRUE)
+		},
+		valueFunc = function() {
+			list.files(
+				path = file.path(project_dir()),
+				pattern = 'ROCK_attributes*',
+				full.names = TRUE)
+		}
+	)
+
+	# Get the currently selected attribute table as a data.frame
+	get_attributes_table <- shiny::reactive({
+		req(input$attributes_cid)
+		attr_files <- get_attribute_files()
+		attr_dfs <- rock::yaml_attributes_to_dfs(attr_files)
+		attr_df <- attr_dfs[[input$attributes_cid]]
+		attr_df[!duplicated(attr_df),]
+	})
+
+	# Get the currently selected attribute file as a YAML object
+	get_attributes_yaml <- shiny::reactive({
+		attr_files <- get_attribute_files()
+		attr_names <- sapply(attr_yamls, FUN = function(x) {
+			names(x[['ROCK_attributes']][[1]][1])
+		})
+		attr_files[[which(attr_names == input$attributes_cid)]]
+	})
+
+	# UI input to select attribute table
+	output$attributes_table_selection <- shiny::renderUI({
+		attr_yamls <- get_attribute_yamls()
+
+		attr_names <- sapply(attr_yamls, FUN = function(x) {
+			names(x[['ROCK_attributes']][[1]][1])
+		})
+
+		shiny::selectInput(
+			inputId = 'attributes_cid',
+			label = 'Class Instance Identifier',
+			choices = attr_names,
+			multiple = FALSE
+		)
+	})
+
+	# Edit table cell
 	shiny::observeEvent(input$attributes_table_cell_edit, {
+		# TODO: make sure first column is unique
 		row  <- input$attributes_table_cell_edit$row
 		col <- input$attributes_table_cell_edit$col
 		value <- input$attributes_table_cell_edit$value
 
-		# TODO: See note above
-		project_dir <- file.path(projects_dir, input$project)
-		yaml_files = c('ROCK_aesthetics.yml', 'ROCK_attributes.yml', 'ROCK_codebook.yml')
-		yaml_files <- file.path(project_dir, yaml_files)
-		rock_files <- rock::parse_sources(path = project_dir, filesWithYAML = yaml_files)
-		nrow(rock_files$attributesDf) # Should be 17
-		attributes <- rock_files$attributesDf[!duplicated(rock_files$attributesDf),]
-		var_name <- names(attributes)[col]
-
-		# print(paste0('Changing cell ', row, ', ', col, ' to ', value))
-
-		attr_file <- file.path(project_dir(), 'ROCK_attributes.yml')
+		attr_yamls <- get_attribute_yamls()
+		attr_files <- get_attribute_files()
+		attr_names <- sapply(attr_yamls, FUN = function(x) {
+			names(x[['ROCK_attributes']][[1]][1])
+		})
+		pos <- which(attr_names == input$attributes_cid)
+		attr_file <- attr_files[pos]
 		attr_yaml <- yaml::read_yaml(attr_file)
-		attr_yaml$ROCK_attributes[[row]]
+		attributes <- get_attributes_table()
+		var_name <- names(attributes)[col]
 		attr_yaml$ROCK_attributes[[row]][[var_name]] <- value
 		cat(paste0('---\n', yaml::as.yaml(attr_yaml), '---\n'), file = attr_file)
+	})
+
+	# Add new row
+	add_row_message <- shiny::reactiveVal('')
+	shiny::observeEvent(input$attribute_new_cid_button, {
+		shiny::showModal(
+			shiny::modalDialog(
+				title = 'New Class Instance',
+				strong(add_row_message()),
+				shiny::textInput(
+					inputId = 'attribute_new_cid_value',
+					label = 'Class Instance ID (cid)',
+					value = '',
+					width = '100%'
+				),
+				shiny::textInput(
+					inputId = 'attribute_new_columns',
+					label = "Fields (comma separated)",
+					value = '',
+					width = '100%'
+				),
+				size = 'xl',
+				easyClose = FALSE,
+				footer = shiny::tagList(
+					shiny::modalButton('Cancel'),
+					shiny::actionButton('attribute_new_cid', 'Add')
+				)
+			)
+		)
+	})
+
+	shiny::observeEvent(input$attribute_new_cid, {
+		if(!grepl(code_pattern, input$attribute_new_cid_value)) {
+			shinyalert::shinyalert(
+				title = 'Invalid Class Instance ID',
+				text = 'Class instance ids can only contain alpha numeric characters and must begin with a letter.')
+		} else if(nchar(input$attribute_new_columns) == 0) {
+			shinyalert::shinyalert(
+				title = 'Please provide at least one field',
+				text = 'There must be at least one field in the attributes table.'
+			)
+		} else {
+			new_yaml <- list(
+				ROCK_attributes = list()
+			)
+			new_yaml$ROCK_attributes[[1]] <- list()
+			new_yaml$ROCK_attributes[[1]][[input$attribute_new_cid_value]] <- "null"
+
+			new_cols <- strsplit(input$attribute_new_columns, ',')[[1]] |> trimws()
+			for(i in new_cols) {
+				new_yaml$ROCK_attributes[[1]][[i]] <- 'null'
+			}
+
+			cat(paste0('---\n', yaml::as.yaml(new_yaml), '---\n'),
+				file = file.path(project_dir(), paste0('ROCK_attributes_', input$attribute_new_cid_value, '.yml')))
+
+			shiny::removeModal()
+		}
+	})
+
+	# Add new column
+	add_new_column_message <- shiny::reactiveVal('')
+	shiny::observeEvent(input$attribute_new_column_button, {
+
+	})
+
+	shiny::observeEvent(input$attribute_new_column, {
+
 	})
 
 	##### Codebook #############################################################
@@ -1125,10 +1251,10 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 	shiny::observeEvent(input$save_code_edits, {
 		id <- shinyTree::get_selected(input$codebook_tree, format = "classid")[[1]]
 		params <- list(
-			yaml_file = paste0(project_dir(), '/ROCK_codebook.yml'),
+			yaml_file = file.path(project_dir(), 'ROCK_codebook.yml'),
 			id = id
 		)
-		yml <- yaml::read_yaml(paste0(project_dir(), '/ROCK_codebook.yml'))
+		yml <- yaml::read_yaml(file.path(project_dir(), 'ROCK_codebook.yml'))
 		codebook <- yml[['ROCK_codebook']]
 		codes <- codebook[['codes']]
 		selected_code <- sapply(codes, FUN = function(x) { x['id'] == id})
