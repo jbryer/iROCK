@@ -129,19 +129,19 @@ iROCK_ui <- function() {
 	        		width = 4,
 	        		shiny::actionButton(
 	        			inputId = 'attribute_new_cid_button',
-	        			label = 'New Class Instance (cid)',
+	        			label = 'New Class',
 	        			icon = shiny::icon('square-plus'),
 	        			style = 'margin-top: 25px;'
 	        		)
 	        	),
 	        	shiny::column(
 	        		width = 4,
-	        		# shiny::actionButton(
-	        		# 	inputId = 'attribute_new_column_button',
-	        		# 	label = 'New Column',
-	        		# 	icon = shiny::icon('table-columns'),
-	        		# 	style = 'margin-top: 25px;'
-	        		# )
+	        		shiny::actionButton(
+	        			inputId = 'attribute_new_column_button',
+	        			label = 'New Attribute',
+	        			icon = shiny::icon('table-columns'),
+	        			style = 'margin-top: 25px;'
+	        		)
 	        	)
 	        ),
 	        DT::DTOutput('attributes_table')

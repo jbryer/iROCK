@@ -1095,7 +1095,7 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 
 		shiny::selectInput(
 			inputId = 'attributes_cid',
-			label = 'Class Instance Identifier',
+			label = 'Class',
 			choices = attr_names,
 			multiple = FALSE
 		)
@@ -1127,17 +1127,17 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 	shiny::observeEvent(input$attribute_new_cid_button, {
 		shiny::showModal(
 			shiny::modalDialog(
-				title = 'New Class Instance',
+				title = 'New Class',
 				strong(add_row_message()),
 				shiny::textInput(
 					inputId = 'attribute_new_cid_value',
-					label = 'Class Instance ID (cid)',
+					label = 'Class ID',
 					value = '',
 					width = '100%'
 				),
 				shiny::textInput(
 					inputId = 'attribute_new_columns',
-					label = "Fields (comma separated)",
+					label = "Attributes (comma separated)",
 					value = '',
 					width = '100%'
 				),
@@ -1154,7 +1154,7 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 	shiny::observeEvent(input$attribute_new_cid, {
 		if(!grepl(code_pattern, input$attribute_new_cid_value)) {
 			shinyalert::shinyalert(
-				title = 'Invalid Class Instance ID',
+				title = 'Invalid Class ID',
 				text = 'Class instance ids can only contain alpha numeric characters and must begin with a letter.')
 		} else if(nchar(input$attribute_new_columns) == 0) {
 			shinyalert::shinyalert(
