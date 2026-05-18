@@ -1054,10 +1054,15 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 		intervalMillis = 500,
 		session = session,
 		checkFunc = function() {
-			list.files(
+			yaml_files <- list.files(
 				path = file.path(project_dir()),
 				pattern = 'ROCK_attributes*',
 				full.names = TRUE)
+			if(length(yaml_files) > 0) {
+				file.info(yaml_files)
+			} else {
+				return(yaml_files)
+			}
 		},
 		valueFunc = function() {
 			list.files(
@@ -1180,14 +1185,61 @@ print(paste0('Updating ', rock_file, ' from raw editor...'))
 		}
 	})
 
-	# Add new column
+	# Add new column/attribute
 	add_new_column_message <- shiny::reactiveVal('')
 	shiny::observeEvent(input$attribute_new_column_button, {
-
+		shiny::showModal(
+			shiny::modalDialog(
+				title = 'New Attribute',
+				strong(add_row_message()),
+				shiny::textInput(
+					inputId = 'attribute_new_column_value',
+					label = 'Attribute',
+					value = '',
+					width = '100%'
+				),
+				size = 'xl',
+				easyClose = FALSE,
+				footer = shiny::tagList(
+					shiny::modalButton('Cancel'),
+					shiny::actionButton('attribute_new_column', 'Add')
+				)
+			)
+		)
 	})
 
 	shiny::observeEvent(input$attribute_new_column, {
+		if(!grepl(code_pattern, input$attribute_new_column_value)) {
+			shinyalert::shinyalert(
+				title = 'Invalid Attribute',
+				text = 'Attribute names can only contain alpha numeric characters and must begin with a letter.')
+		} else {
+			attr_files <- get_attribute_files()
+			attr_yamls <- get_attribute_yamls()
+			attr_names <- sapply(attr_yamls, FUN = function(x) {
+				names(x[['ROCK_attributes']][[1]][1])
+			})
+			yaml_file <- attr_files[[which(attr_names == input$attributes_cid)]]
+			new_yaml <- yaml::read_yaml(yaml_file)
 
+			for(i in seq_len(length(new_yaml$ROCK_attributes))) {
+				# Check to see if the attribute already exists in the file
+				if(input$attribute_new_column_value %in% names(new_yaml$ROCK_attributes[[i]])) {
+					shinyalert::shinyalert(
+						title = 'Invalid attribute',
+						text = paste0('Attribute already exitsts: ', input$attribute_new_column_value),
+						type = 'error'
+					)
+					return()
+				}
+				new_yaml$ROCK_attributes[[i]][[input$attribute_new_column_value]] <- "null"
+			}
+
+			cat(paste0('---\n', yaml::as.yaml(new_yaml), '---\n'),
+				file = yaml_file)
+
+			shiny::removeModal()
+		}
 	})
 
 	##### Codebook #############################################################
